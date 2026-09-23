@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Panel — RubyEngine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  body.adm-body {
+    background: #05060a;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .adm-shell {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 26px 20px 60px;
+  }
+  .adm-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(124,92,255,0.10), rgba(124,92,255,0.02));
+    border: 1px solid rgba(124,92,255,0.28);
+    margin-bottom: 22px;
+  }
+  .adm-head-icon {
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #7c5cff, #4f8cff);
+    display: grid; place-items: center;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 10px 26px rgba(124,92,255,0.4);
+  }
+  .adm-head-info { flex: 1; min-width: 0; }
+  .adm-head-title {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .adm-head-name {
+    font-size: 17px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .adm-badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(124,92,255,0.16);
+    border: 1px solid rgba(124,92,255,0.4);
+    color: #a78bfa;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  /* STATS (4 kolom) */
+  .adm-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .adm-stat {
+    padding: 14px 10px;
+    border-radius: 14px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .adm-stat .lbl {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.4);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .adm-stat .val {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .adm-stat.acc   .val { color: #7c5cff; }
+  .adm-stat.ok    .val { color: #22c55e; }
+  .adm-stat.warn  .val { color: #f59e0b; }
+  .adm-stat.err   .val { color: #f87171; }
+
+  /* CARD */
+  .adm-card {
+    padding: 22px 20px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #0e111a, #090b12);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    margin-bottom: 22px;
+  }
+  .adm-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 18px;
+  }
+  .adm-card-title::before {
+    content: '';
+    width: 3px; height: 16px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #7c5cff, #4f8cff);
+    box-shadow: 0 0 12px rgba(124,92,255,0.6);
+  }
+  .adm-field { margin-bottom: 14px; }
+  .adm-field label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 7px;
+  }
+  .adm-input {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 12px;
+    background: #050608;
+    border: 1px solid rgba(255,255,255,0.07);
+    color: #fff;
+    font-size: 14.5px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .adm-input:focus {
+    border-color: rgba(124,92,255,0.55);
+    box-shadow: 0 0 0 4px rgba(124,92,255,0.12);
+  }
+  .adm-pass-wrap { display: flex; gap: 8px; }
+  .adm-pass-wrap .adm-input { flex: 1; }
+  .adm-gen {
+    padding: 0 14px;
+    border-radius: 12px;
+    background: rgba(124,92,255,0.12);
+    border: 1px solid rgba(124,92,255,0.4);
+    color: #a78bfa;
+    font-size: 12px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+  .adm-gen:hover { background: rgba(124,92,255,0.2); }
+  .adm-gen:active { transform: scale(0.96); }
+
+  .adm-role {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .adm-role button {
+    padding: 11px;
+    border-radius: 11px;
+    background: #050608;
+    border: 1.5px solid rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .adm-role button.on {
+    border-color: rgba(124,92,255,0.7);
+    background: rgba(124,92,255,0.12);
+    color: #fff;
+    box-shadow: 0 0 0 1px rgba(124,92,255,0.2);
+  }
+
+  /* DURATION PICKER */
+  .adm-duration {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .adm-duration button {
+    padding: 10px 8px;
+    border-radius: 11px;
+    background: #050608;
+    border: 1.5px solid rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.5);
+    font-size: 12.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .adm-duration button.on {
+    border-color: rgba(34,197,94,0.7);
+    background: rgba(34,197,94,0.12);
+    color: #86efac;
+    box-shadow: 0 0 0 1px rgba(34,197,94,0.2);
+  }
+  .adm-duration button[data-days="permanent"] {
+    grid-column: span 2;
+  }
+  .adm-duration button.on[data-days="permanent"] {
+    border-color: rgba(34,211,238,0.7);
+    background: rgba(34,211,238,0.12);
+    color: #67e8f9;
+    box-shadow: 0 0 0 1px rgba(34,211,238,0.2);
+  }
+  .adm-duration button:disabled,
+  .adm-duration button.dim {
+    opacity: 0.3;
+    pointer-events: none;
+    filter: grayscale(0.7);
+  }
+  .adm-hint {
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+  .adm-hint svg { opacity: 0.6; }
+
+  .adm-submit {
+    width: 100%;
+    padding: 14px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #7c5cff, #4f8cff);
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 28px rgba(124,92,255,0.4);
+    transition: all 0.18s ease;
+    margin-top: 6px;
+  }
+  .adm-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(124,92,255,0.55); }
+  .adm-submit:active { transform: translateY(0); }
+
+  /* USER LIST */
+  .adm-list { display: flex; flex-direction: column; gap: 8px; }
+  .adm-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #05060a;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.15s ease;
+  }
+  .adm-user:hover { border-color: rgba(255,255,255,0.12); }
+  .adm-user.off,
+  .adm-user.expired { opacity: 0.55; }
+  .adm-user.expired .adm-avatar {
+    background: linear-gradient(135deg, #3a1e1e, #1a0d0d) !important;
+    color: #f87171 !important;
+    border-color: #3a2020 !important;
+  }
+  .adm-user.me {
+    border-color: rgba(124,92,255,0.5);
+    background: rgba(124,92,255,0.06);
+  }
+  .adm-avatar {
+    width: 40px; height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #23262f, #1a1c23);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    font-size: 15px;
+    font-weight: 800;
+    color: #7c5cff;
+    flex-shrink: 0;
+  }
+  .adm-user.me .adm-avatar {
+    background: linear-gradient(135deg, #7c5cff, #4f8cff);
+    color: #fff;
+    border-color: transparent;
+  }
+  .adm-user-info { flex: 1; min-width: 0; }
+  .adm-user-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .adm-user-meta {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.4);
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .adm-user-meta .dot {
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+  }
+
+  /* TAGS */
+  .adm-tag {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .adm-tag.admin { background: rgba(124,92,255,0.2); color: #a78bfa; }
+  .adm-tag.user  { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); }
+  .adm-tag.off   { background: rgba(239,68,68,0.15); color: #f87171; }
+  .adm-tag.you   { background: rgba(59,130,246,0.18); color: #60a5fa; }
+
+  /* EXPIRY BADGE */
+  .adm-exp {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .adm-exp.perm     { background: rgba(34,211,238,0.14); color: #67e8f9; }
+  .adm-exp.safe     { background: rgba(34,197,94,0.14);  color: #4ade80; }
+  .adm-exp.warn     { background: rgba(245,158,11,0.14); color: #fbbf24; }
+  .adm-exp.danger   { background: rgba(249,115,22,0.14); color: #fb923c; }
+  .adm-exp.critical { background: rgba(239,68,68,0.16);  color: #f87171; animation: expBlink 1.4s infinite; }
+  .adm-exp.expired  { background: rgba(120,120,120,0.16); color: #9ca3af; }
+  @keyframes expBlink {
+    0%,100% { opacity: 1; }
+    50%     { opacity: 0.55; }
+  }
+
+  /* ACTIONS */
+  .adm-actions { display: flex; gap: 5px; flex-shrink: 0; }
+  .adm-btn {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.6);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 0;
+  }
+  .adm-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .adm-btn.green:hover { background: rgba(34,197,94,0.15); color: #86efac; border-color: rgba(34,197,94,0.4); }
+  .adm-btn.danger:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.35); }
+  .adm-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+  /* TOAST */
+  .adm-toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(30,32,42,0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 12px 34px rgba(0,0,0,0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 999;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .adm-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .adm-toast.ok  { border-color: rgba(34,197,94,0.5); color: #86efac; }
+  .adm-toast.err { border-color: rgba(239,68,68,0.5); color: #fca5a5; }
+
+  @media (max-width: 640px) {
+    .adm-shell { padding: 18px 16px 50px; }
+    .adm-stats { gap: 6px; }
+    .adm-stat { padding: 11px 6px; }
+    .adm-stat .lbl { font-size: 9px; letter-spacing: 0.1em; }
+    .adm-stat .val { font-size: 17px; }
+    .adm-user { padding: 12px; gap: 10px; flex-wrap: wrap; }
+    .adm-avatar { width: 36px; height: 36px; }
+    .adm-actions { gap: 4px; }
+    .adm-btn { width: 30px; height: 30px; font-size: 12px; }
+    .adm-user-name { font-size: 13px; }
+    .adm-user-meta { font-size: 10.5px; }
+  }
+</style>
+</head>
+
+<body class="adm-body">
+
+  <header class="re-header">
+    <div class="re-header-inner">
+      <a href="home.html" class="re-logo">
+        <div class="re-logo-mark">R</div>
+        <div class="re-logo-text">Ruby<span>Engine</span></div>
+      </a>
+      <div class="re-header-actions">
+        <a href="home.html" class="re-icon-btn" title="Kembali">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12l9-9 9 9"/>
+            <path d="M5 10v10h14V10"/>
+          </svg>
+        </a>
+        <button class="re-icon-btn" id="logoutBtn" title="Logout">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <path d="m16 17 5-5-5-5"/>
+            <path d="M21 12H9"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="re-nav">
+    <div class="re-nav-inner">
+      <a href="home.html">Home</a>
+      <a href="apk.html">APK</a>
+      <a href="game.html">Game</a>
+      <a href="wa.html">WA</a>
+      <a href="admin.html" class="active">Admin</a>
+    </div>
+  </nav>
+
+  <main class="adm-shell">
+
+    <div class="adm-head">
+      <div class="adm-head-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="adm-head-info">
+        <div class="adm-head-title">Admin Panel</div>
+        <div class="adm-head-name" id="admName">—</div>
+      </div>
+      <span class="adm-badge">Admin</span>
+    </div>
+
+    <div class="adm-stats">
+      <div class="adm-stat acc">
+        <div class="lbl">Total</div>
+        <div class="val" id="stTotal">0</div>
+      </div>
+      <div class="adm-stat ok">
+        <div class="lbl">Aktif</div>
+        <div class="val" id="stActive">0</div>
+      </div>
+      <div class="adm-stat warn">
+        <div class="lbl">Segera</div>
+        <div class="val" id="stSoon">0</div>
+      </div>
+      <div class="adm-stat err">
+        <div class="lbl">Expired</div>
+        <div class="val" id="stExpired">0</div>
+      </div>
+    </div>
+
+    <section class="adm-card">
+      <div class="adm-card-title">Tambah Akun Baru</div>
+
+      <div class="adm-field">
+        <label for="newUser">Username</label>
+        <input id="newUser" class="adm-input" type="text" placeholder="contoh: Budi01" autocomplete="off" />
+      </div>
+
+      <div class="adm-field">
+        <label for="newPass">Password</label>
+        <div class="adm-pass-wrap">
+          <input id="newPass" class="adm-input" type="text" placeholder="min. 4 karakter" autocomplete="off" />
+          <button type="button" class="adm-gen" id="genPass">🎲 Generate</button>
+        </div>
+      </div>
+
+      <div class="adm-field">
+        <label>Role</label>
+        <div class="adm-role" id="rolePick">
+          <button type="button" class="on" data-role="user">👤 User</button>
+          <button type="button" data-role="admin">🛡 Admin</button>
+        </div>
+      </div>
+
+      <div class="adm-field">
+        <label>Masa Aktif</label>
+        <div class="adm-duration" id="durPick">
+          <button type="button" data-days="3">3 Hari</button>
+          <button type="button" data-days="7">7 Hari</button>
+          <button type="button" data-days="14">14 Hari</button>
+          <button type="button" class="on" data-days="30">30 Hari</button>
+          <button type="button" data-days="permanent">∞ Permanen</button>
+        </div>
+        <div class="adm-hint">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <span id="durHint">Akun akan expired dalam 30 hari</span>
+        </div>
+      </div>
+
+      <button type="button" class="adm-submit" id="addBtn">+ Tambah Akun</button>
+    </section>
+
+    <section class="adm-card">
+      <div class="adm-card-title">Daftar Akun</div>
+      <div class="adm-list" id="userList"></div>
+    </section>
+
+  </main>
+
+  <div class="adm-toast" id="toast"></div>
+  
+    <script src="js/sfx.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var me = Auth.requireAdmin('login.html');
+      if (!me) return;
+
+      document.getElementById('admName').textContent = me.username;
+
+      var pendingRole = 'user';
+      var pendingDays = 30;
+      var toastEl = document.getElementById('toast');
+      var toastT = 0;
+      var tickInterval = null;
+
+      /* ========== TOAST ========== */
+      function toast(msg, type) {
+        toastEl.textContent = msg;
+        toastEl.className = 'adm-toast show ' + (type || '');
+        clearTimeout(toastT);
+        toastT = setTimeout(function () {
+          toastEl.classList.remove('show');
+        }, 2400);
+      }
+
+      /* ========== HELPERS ========== */
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+      function fmtDate(ts) {
+        try {
+          var d = new Date(ts);
+          return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear();
+        } catch (_) { return '-'; }
+      }
+
+      function fmtExpiry(user) {
+        if (Auth.isPermanent(user)) return 'Selamanya';
+        if (Auth.isExpired(user)) return 'Expired ' + fmtDate(user.expiresAt);
+        return fmtDate(user.expiresAt);
+      }
+
+      function expiryBadge(user) {
+        var level = Auth.getExpiryLevel(user);
+        if (level === 'permanent') {
+          return '<span class="adm-exp perm">∞ Permanen</span>';
+        }
+        if (level === 'expired') {
+          return '<span class="adm-exp expired">Expired</span>';
+        }
+        var ms = Auth.getRemainingMs(user);
+        var days = Math.floor(ms / 86400000);
+        var hours = Math.floor((ms % 86400000) / 3600000);
+
+        var label;
+        if (days >= 1) {
+          label = days + ' hari' + (hours > 0 ? ' ' + hours + 'j' : '');
+        } else {
+          label = hours + ' jam';
+        }
+
+        return '<span class="adm-exp ' + level + '">⏱ ' + label + '</span>';
+      }
+
+      /* ========== RENDER ========== */
+      function render() {
+        var list = Auth.getAllUsers();
+
+        var total   = list.length;
+        var active  = list.filter(function (u) { return u.active && !Auth.isExpired(u); }).length;
+        var soon    = list.filter(function (u) {
+          var lv = Auth.getExpiryLevel(u);
+          return lv === 'warn' || lv === 'danger' || lv === 'critical';
+        }).length;
+        var expired = list.filter(function (u) { return Auth.isExpired(u); }).length;
+
+        document.getElementById('stTotal').textContent   = total;
+        document.getElementById('stActive').textContent  = active;
+        document.getElementById('stSoon').textContent    = soon;
+        document.getElementById('stExpired').textContent = expired;
+
+        var box = document.getElementById('userList');
+        box.innerHTML = '';
+
+        // Sort: admin dulu, lalu yang aktif, lalu abjad
+        list.sort(function (a, b) {
+          if (a.role !== b.role) return a.role === 'admin' ? -1 : 1;
+          var ea = Auth.isExpired(a) ? 1 : 0;
+          var eb = Auth.isExpired(b) ? 1 : 0;
+          if (ea !== eb) return ea - eb;
+          return a.username.localeCompare(b.username);
+        });
+
+        var adminCount = list.filter(function (u) { return u.role === 'admin'; }).length;
+
+        list.forEach(function (u) {
+          var isMe = u.username.toLowerCase() === me.username.toLowerCase();
+          var expired = Auth.isExpired(u);
+
+          var cls = 'adm-user';
+          if (!u.active || expired) cls += ' off';
+          if (expired) cls += ' expired';
+          if (isMe) cls += ' me';
+
+          var el = document.createElement('div');
+          el.className = cls;
+
+          var tagClass = u.role === 'admin' ? 'admin' : 'user';
+          var tagText = u.role === 'admin' ? 'Admin' : 'User';
+          var youTag = isMe ? '<span class="adm-tag you">YOU</span>' : '';
+          var offTag = !u.active ? '<span class="adm-tag off">Off</span>' : '';
+
+          var expBadge = expiryBadge(u);
+
+          el.innerHTML =
+            '<div class="adm-avatar">' + u.username.charAt(0).toUpperCase() + '</div>' +
+            '<div class="adm-user-info">' +
+              '<div class="adm-user-name">' +
+                u.username +
+                youTag +
+                ' <span class="adm-tag ' + tagClass + '">' + tagText + '</span>' +
+                offTag +
+              '</div>' +
+              '<div class="adm-user-meta">' +
+                '<span>Exp: ' + fmtExpiry(u) + '</span>' +
+                '<span class="dot"></span>' +
+                expBadge +
+              '</div>' +
+            '</div>' +
+            '<div class="adm-actions">' +
+              '<button class="adm-btn green" data-act="extend" title="Perpanjang Masa Aktif">⏱</button>' +
+              '<button class="adm-btn" data-act="pass" title="Reset Password">🔑</button>' +
+              '<button class="adm-btn" data-act="toggle" title="' + (u.active ? 'Nonaktifkan' : 'Aktifkan') + '" ' + (isMe ? 'disabled' : '') + '>' + (u.active ? '🚫' : '✔') + '</button>' +
+              '<button class="adm-btn danger" data-act="del" title="Hapus" ' +
+                (isMe || (u.role === 'admin' && adminCount <= 1) ? 'disabled' : '') + '>🗑</button>' +
+            '</div>';
+
+          /* --- Tombol Extend --- */
+          el.querySelector('[data-act="extend"]').addEventListener('click', function () {
+            openExtendDialog(u);
+          });
+
+          /* --- Reset Password --- */
+          el.querySelector('[data-act="pass"]').addEventListener('click', function () {
+            var np = prompt('Password baru untuk "' + u.username + '":');
+            if (np === null) return;
+            np = np.trim();
+            if (np.length < 4) { toast('Password minimal 4 karakter', 'err'); if (SFX.err) SFX.err(); return; }
+            var r = Auth.updateUser(u.username, { password: np });
+            if (r.ok) { toast('Password diubah: ' + np, 'ok'); if (SFX.ok) SFX.ok(); }
+          });
+
+          /* --- Toggle Active --- */
+          el.querySelector('[data-act="toggle"]').addEventListener('click', function () {
+            var r = Auth.updateUser(u.username, { active: !u.active });
+            if (r.ok) {
+              toast(u.active ? 'Akun dinonaktifkan' : 'Akun diaktifkan', 'ok');
+              if (SFX.tap) SFX.tap();
+              render();
+            }
+          });
+
+          /* --- Delete --- */
+          el.querySelector('[data-act="del"]').addEventListener('click', function () {
+            if (!confirm('Hapus akun "' + u.username + '"?')) return;
+            var r = Auth.deleteUser(u.username);
+            if (r.ok) {
+              toast('Akun dihapus', 'ok');
+              if (SFX.ok) SFX.ok();
+              render();
+            } else if (r.reason === 'last_admin') {
+              toast('Tidak bisa hapus admin terakhir', 'err');
+              if (SFX.err) SFX.err();
+            }
+          });
+
+          box.appendChild(el);
+        });
+      }
+
+      /* ========== EXTEND DIALOG ========== */
+      function openExtendDialog(user) {
+        var current = Auth.isPermanent(user)
+          ? 'Permanen'
+          : (Auth.isExpired(user)
+              ? 'Expired (' + fmtDate(user.expiresAt) + ')'
+              : fmtDate(user.expiresAt));
+
+        var msg =
+          'Perpanjang masa aktif untuk "' + user.username + '"\n\n' +
+          'Masa aktif sekarang: ' + current + '\n\n' +
+          'Pilih durasi perpanjangan:\n' +
+          '  1 = +3 hari\n' +
+          '  2 = +7 hari\n' +
+          '  3 = +14 hari\n' +
+          '  4 = +30 hari\n' +
+          '  5 = Permanen (∞)\n' +
+          '  6 = Reset ke 30 hari dari sekarang\n\n' +
+          'Ketik angka (1-6):';
+
+        var input = prompt(msg, '');
+        if (input === null) return;
+
+        input = input.trim();
+
+        var choice = parseInt(input, 10);
+        var label = '';
+        var result = null;
+
+        if (choice === 1) { result = Auth.extendUser(user.username, 3);  label = '+3 hari'; }
+        else if (choice === 2) { result = Auth.extendUser(user.username, 7);  label = '+7 hari'; }
+        else if (choice === 3) { result = Auth.extendUser(user.username, 14); label = '+14 hari'; }
+        else if (choice === 4) { result = Auth.extendUser(user.username, 30); label = '+30 hari'; }
+        else if (choice === 5) { result = Auth.extendUser(user.username, 'permanent'); label = 'Permanen'; }
+        else if (choice === 6) { result = Auth.resetExpiry(user.username, 30); label = 'Reset 30 hari'; }
+        else {
+          toast('Pilihan tidak valid', 'err');
+          if (SFX.err) SFX.err();
+          return;
+        }
+
+        if (result && result.ok) {
+          toast('Masa aktif "' + user.username + '" ' + label, 'ok');
+          if (SFX.win) SFX.win();
+          else if (SFX.ok) SFX.ok();
+          render();
+        } else {
+          toast('Gagal memperpanjang akun', 'err');
+          if (SFX.err) SFX.err();
+        }
+      }
+
+      /* ========== ROLE PICKER ========== */
+      document.getElementById('rolePick').addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        document.querySelectorAll('#rolePick button').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        pendingRole = b.dataset.role;
+
+        // Kalau role admin → set permanent & disable duration picker
+        var durBtns = document.querySelectorAll('#durPick button');
+        if (pendingRole === 'admin') {
+          durBtns.forEach(function (btn) {
+            btn.classList.remove('on');
+            if (btn.dataset.days === 'permanent') btn.classList.add('on');
+          });
+          pendingDays = 'permanent';
+          updateDurHint();
+        }
+        if (SFX.tap) SFX.tap();
+      });
+
+      /* ========== DURATION PICKER ========== */
+      document.getElementById('durPick').addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        document.querySelectorAll('#durPick button').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+
+        var v = b.dataset.days;
+        pendingDays = (v === 'permanent') ? 'permanent' : parseInt(v, 10);
+        updateDurHint();
+
+        if (SFX.tap) SFX.tap();
+      });
+
+      function updateDurHint() {
+        var hintEl = document.getElementById('durHint');
+        if (pendingRole === 'admin') {
+          hintEl.textContent = 'Akun admin selalu permanent';
+          return;
+        }
+        if (pendingDays === 'permanent') {
+          hintEl.textContent = 'Akun tidak akan expired';
+        } else {
+          hintEl.textContent = 'Akun akan expired dalam ' + pendingDays + ' hari';
+        }
+      }
+
+      /* ========== GENERATE PASSWORD ========== */
+      document.getElementById('genPass').addEventListener('click', function () {
+        var p = Auth.genPassword(10);
+        document.getElementById('newPass').value = p;
+        if (SFX.pick) SFX.pick();
+      });
+
+      /* ========== ADD USER ========== */
+      document.getElementById('addBtn').addEventListener('click', function () {
+        var u = document.getElementById('newUser').value;
+        var p = document.getElementById('newPass').value;
+
+        var r = Auth.addUser(u, p, pendingRole, pendingDays);
+        if (!r.ok) {
+          var msg = 'Gagal menambah akun';
+          if (r.reason === 'exists') msg = 'Username sudah dipakai';
+          else if (r.reason === 'empty') msg = 'Username / password wajib diisi';
+          else if (r.reason === 'short_username') msg = 'Username minimal 3 karakter';
+          else if (r.reason === 'short_password') msg = 'Password minimal 4 karakter';
+          else if (r.reason === 'invalid_username') msg = 'Username hanya huruf, angka, titik, _, -';
+          toast(msg, 'err');
+          if (SFX.err) SFX.err();
+          return;
+        }
+
+        var durText = (pendingDays === 'permanent') ? 'permanent' : (pendingDays + ' hari');
+        toast('Akun "' + u.trim() + '" dibuat (' + durText + ')', 'ok');
+        if (SFX.win) SFX.win();
+
+        // Reset form
+        document.getElementById('newUser').value = '';
+        document.getElementById('newPass').value = '';
+
+        render();
+      });
+
+      /* ========== LOGOUT ========== */
+      document.getElementById('logoutBtn').addEventListener('click', function () {
+        if (!confirm('Logout dari akun ini?')) return;
+        Auth.logout();
+        if (SFX.tap) SFX.tap();
+        window.location.href = 'login.html';
+      });
+
+      /* ========== AUTO REFRESH (countdown live) ========== */
+      tickInterval = setInterval(function () {
+        render();
+      }, 60000); // refresh tiap 60 detik (biar badge hari update)
+
+      /* ========== INIT ========== */
+      updateDurHint();
+      render();
+    })();
+  </script>
+</body>
+</html>

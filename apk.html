@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>APK — RubyEngine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  /* Emoji & text konten untuk APK card */
+  .re-emoji {
+    font-size: 26px;
+    line-height: 1;
+    text-shadow: 0 4px 14px rgba(0,0,0,0.45);
+    filter: saturate(1.05);
+  }
+  .re-card-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-0);
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 1;
+  }
+  .re-card-text {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.55;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+    min-height: 40px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="re-header">
+  <div class="re-header-inner">
+    <a href="home.html" class="re-logo">
+      <div class="re-logo-mark">R</div>
+      <div class="re-logo-text">Ruby<span>Engine</span></div>
+    </a>
+    <div class="re-header-actions">
+      <button class="re-icon-btn" aria-label="Notifications">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <a href="login.html" class="re-icon-btn" aria-label="Account">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="re-nav">
+  <div class="re-nav-inner">
+    <a href="home.html">Home</a>
+    <a href="apk.html" class="active">APK</a>
+    <a href="game.html">Game</a>
+    <a href="wa.html">WA</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="re-main">
+
+  <section class="re-page-head">
+    <div class="re-page-title-group">
+      <div class="re-eyebrow">Katalog Aplikasi</div>
+      <h1 class="re-page-title">APK</h1>
+      <p class="re-page-sub">15 aplikasi utilitas ringan — cepat, simpel, dan siap pakai.</p>
+    </div>
+  </section>
+
+  <section class="re-grid">
+
+    <!-- 1 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🧮</div>
+      <h3 class="re-card-name">Kalkulator</h3>
+      <p class="re-card-text">Hitung cepat operasi dasar, persen, dan scientific.</p>
+      <a href="apk/apk1.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 2 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">💵</div>
+      <h3 class="re-card-name">Kurs USD</h3>
+      <p class="re-card-text">Cek dan konversi nilai tukar USD ke Rupiah terkini.</p>
+      <a href="apk/apk2.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 3 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🏷️</div>
+      <h3 class="re-card-name">Kalkulator Diskon</h3>
+      <p class="re-card-text">Hitung harga akhir setelah diskon dan potongan.</p>
+      <a href="apk/apk3.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 4 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🎮</div>
+      <h3 class="re-card-name">Nickname Store</h3>
+      <p class="re-card-text">Buat nickname keren &amp; unik untuk game atau sosmed.</p>
+      <a href="apk/apk4.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 5 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">📦</div>
+      <h3 class="re-card-name">Name Produk</h3>
+      <p class="re-card-text">Generate nama produk branding yang catchy &amp; jual.</p>
+      <a href="apk/apk5.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 6 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🔐</div>
+      <h3 class="re-card-name">Password Generator</h3>
+      <p class="re-card-text">Buat password kuat, acak, dan aman secara instan.</p>
+      <a href="apk/apk6.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 7 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">📝</div>
+      <h3 class="re-card-name">Deskripsi Produk</h3>
+      <p class="re-card-text">Bikin deskripsi jualan otomatis siap copy paste.</p>
+      <a href="apk/apk7.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 8 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🤖</div>
+      <h3 class="re-card-name">Asisten AI</h3>
+      <p class="re-card-text">Tanya apa saja, dapat jawaban cepat &amp; ringkas.</p>
+      <a href="apk/apk8.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 9 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">⏱️</div>
+      <h3 class="re-card-name">Timer</h3>
+      <p class="re-card-text">Stopwatch &amp; countdown untuk fokus dan aktivitas.</p>
+      <a href="apk/apk9.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 10 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">⛽</div>
+      <h3 class="re-card-name">Kalkulator BBM</h3>
+      <p class="re-card-text">Hitung konsumsi bahan bakar &amp; estimasi biaya.</p>
+      <a href="apk/apk10.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 11 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🎂</div>
+      <h3 class="re-card-name">Age Calculator</h3>
+      <p class="re-card-text">Cek umur presisi dalam tahun, bulan, dan hari.</p>
+      <a href="apk/apk11.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 12 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🎡</div>
+      <h3 class="re-card-name">Spin Wheel</h3>
+      <p class="re-card-text">Roda putar random untuk undian &amp; keputusan.</p>
+      <a href="apk/apk12.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 13 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🎰</div>
+      <h3 class="re-card-name">Judol Simulator</h3>
+      <p class="re-card-text">Simulasi slot ringan untuk hiburan — bukan judi asli.</p>
+      <a href="apk/apk13.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 14 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🍱</div>
+      <h3 class="re-card-name">MBG Calculator</h3>
+      <p class="re-card-text">Kalkulator kebutuhan porsi &amp; estimasi biaya MBG.</p>
+      <a href="apk/apk14.html" class="re-card-btn">Lihat</a>
+    </article>
+
+    <!-- 15 -->
+    <article class="re-card">
+      <div class="re-card-icon re-emoji">🎬</div>
+      <h3 class="re-card-name">Creator Studio</h3>
+      <p class="re-card-text">Alat kreator lengkap untuk konten &amp; editing cepat.</p>
+      <a href="apk/apk15.html" class="re-card-btn">Lihat</a>
+    </article>
+
+  </section>
+
+</main>
+
+<footer class="re-footer">© 2025 RubyEngine — All rights reserved.</footer>
+
+<script src="js/script.js"></script>
+<script src="js/sfx.js"></script>
+</body>
+</html>
