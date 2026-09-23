@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Star Run · ToolKit</title>
+<style>
+:root{--bg:#2a1208;--card:#3d1a0a;--fg:#ffe8d4;--mut:#a87550;--acc:#ff8a3d;--acc2:#ffd166;--line:rgba(255,138,61,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#4a200c,#2a1208 65%);color:var(--fg);min-height:100dvh;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.hud{display:flex;justify-content:space-between;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:12px}
+.hud span{font-size:11px;color:var(--mut);letter-spacing:.5px}
+.hud b{display:block;color:var(--acc2);font-size:17px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#1a0804}
+canvas{display:block;width:100%;aspect-ratio:16/9;touch-action:manipulation}
+.ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(26,8,4,.9);backdrop-filter:blur(8px);text-align:center;padding:20px;z-index:5}
+.ov h2{font-size:22px;margin-bottom:8px;color:var(--acc2);text-shadow:0 0 20px rgba(255,209,102,.5)}
+.ov p{color:var(--mut);font-size:13px;margin-bottom:16px}
+.btn{padding:14px 28px;border-radius:14px;background:linear-gradient(135deg,var(--acc),#d92f1a);color:#fff;font-size:15px;font-weight:800;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(255,138,61,.35)}
+.btn:active{transform:scale(.97)}
+.hint{text-align:center;font-size:12px;color:var(--mut);margin-top:10px}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Star Run</h1></div>
+<div class="hud">
+<span>SKOR<b id="sc">0</b></span><span>HIGH<b id="hi">0</b></span>
+</div>
+<div class="wrap">
+<canvas id="cv"></canvas>
+<div class="ov" id="ov">
+<div><h2 id="ot">Star Run</h2><p id="op">Tap layar untuk melompat</p><button class="btn" id="ob">▶ Mulai</button></div>
+</div>
+</div>
+<div class="hint">👆 Tap area game untuk melompat</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var W,H,scale,ground;
+var player,obs,score,alive,loop,frame,gravity,speed,spawnTimer;
+var hi=+(localStorage.getItem('dino3_hi')||0);
+var EMOJI_FONT='"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Android Emoji",sans-serif';
+
+function size(){var r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);W=r.width;H=r.height;scale=H/180;ground=H-26*scale}
+
+function reset(){
+  // Player = bintang
+  player={x:40*scale,y:ground-42*scale,w:36*scale,h:36*scale,vy:0,onG:true};
+  obs=[];score=0;speed=2.4;gravity=0.75;frame=0;spawnTimer=60;alive=true;upd();
+}
+function upd(){document.getElementById('sc').textContent=Math.floor(score);document.getElementById('hi').textContent=hi}
+
+function jump(){
+  if(!alive||!player.onG)return;
+  // LOMPATAN LEBIH TINGGI: -12.5 (sebelumnya -10.8)
+  player.vy=-12.5;
+  player.onG=false;
+  SFX.jump();
+  if(navigator.vibrate)navigator.vibrate(15);
+}
+
+function draw(){
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#3d1508');g.addColorStop(.6,'#1a0804');g.addColorStop(1,'#0d0402');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // Matahari
+  ctx.fillStyle='rgba(255,209,102,.22)';ctx.beginPath();ctx.arc(W-60,H*.35,50,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,138,61,.4)';ctx.beginPath();ctx.arc(W-60,H*.35,32,0,7);ctx.fill();
+  // Tanah
+  ctx.strokeStyle='rgba(255,138,61,.35)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,ground);ctx.lineTo(W,ground);ctx.stroke();
+  for(var i=0;i<W;i+=30){ctx.fillStyle='rgba(255,138,61,.15)';ctx.fillRect(i+((frame*.5)%30),ground+6,3,3)}
+
+  /* ===== PLAYER: BINTANG ⭐ BERPUTAR ===== */
+  ctx.save();
+  ctx.translate(player.x + player.w/2, player.y + player.h/2);
+  ctx.rotate(frame * 0.06); // berputar konstan
+  ctx.font = Math.round(player.h * 1.15) + 'px ' + EMOJI_FONT;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor='rgba(255,209,102,.75)';
+  ctx.shadowBlur=20;
+  ctx.fillText('⭐', 0, 0);
+  ctx.restore();
+
+  /* ===== OBSTACLES ===== */
+  obs.forEach(function(o){
+    ctx.shadowColor='#d92f1a';ctx.shadowBlur=14;
+    ctx.fillStyle='#d92f1a';
+    ctx.beginPath();
+    if(ctx.roundRect){ctx.roundRect(o.x,o.y,o.w,o.h,4*scale)}else{ctx.rect(o.x,o.y,o.w,o.h)}
+    ctx.fill();ctx.shadowBlur=0;
+  });
+}
+
+function step(){
+  if(!alive)return;frame++;
+  player.vy+=gravity;player.y+=player.vy;
+  if(player.y>=ground-player.h){player.y=ground-player.h;player.vy=0;player.onG=true}
+  spawnTimer--;
+  if(spawnTimer<=0){obs.push({x:W,y:ground-36*scale,w:18*scale,h:36*scale});spawnTimer=Math.max(38,70-speed*4)}
+  obs.forEach(function(o){o.x-=speed});
+  obs=obs.filter(function(o){return o.x+o.w>-5});
+  // Hitbox longgar karena bintang bulat
+  for(var i=0;i<obs.length;i++){
+    var o=obs[i];
+    if(player.x+player.w*0.25<o.x+o.w*0.85 &&
+       player.x+player.w*0.85>o.x+o.w*0.15 &&
+       player.y+player.h*0.15<o.y+o.h &&
+       player.y+player.h*0.9>o.y)return over();
+  }
+  score+=0.18;
+  if(Math.floor(score)>hi){hi=Math.floor(score);localStorage.setItem('dino3_hi',hi)}
+  speed+=0.0014;upd();draw();
+}
+
+function over(){
+  alive=false;clearInterval(loop);SFX.lose();
+  if(navigator.vibrate)navigator.vibrate([120,60,120]);
+  document.getElementById('ot').textContent='Game Over';
+  document.getElementById('op').textContent='Skor: '+Math.floor(score)+' • High: '+hi;
+  document.getElementById('ob').textContent='⟲ Main Lagi';
+  document.getElementById('ov').style.display='grid';
+}
+function start(){reset();document.getElementById('ov').style.display='none';SFX.ok();
+  clearInterval(loop);loop=setInterval(step,16);}
+cv.addEventListener('click',function(){if(alive)jump()});
+document.getElementById('ob').addEventListener('click',start);
+window.addEventListener('resize',function(){size();draw()});
+size();reset();alive=false;draw();
+})();
+</script></body></html>

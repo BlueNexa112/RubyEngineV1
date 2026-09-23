@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Memory Card · ToolKit</title>
+<style>
+:root{--bg:#1a0f2a;--card:#2a1d42;--fg:#f5eaff;--mut:#a890c8;--acc:#ffa8d8;--acc2:#a8e6ff;--ok:#a8ffd8;--line:rgba(255,168,216,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{overscroll-behavior:none}
+body{
+  font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  background:radial-gradient(140% 80% at 50% 0%,#3d1e5c,#1a0f2a 65%);
+  color:var(--fg);min-height:100dvh;padding:16px;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.back-btn{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+.back-btn:active{transform:scale(.93)}
+h1{font-size:17px;font-weight:700}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.hud div{padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:center}
+.hud span{font-size:10px;color:var(--mut);letter-spacing:1px}
+.hud b{display:block;color:var(--acc);font-size:17px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+.status{
+  text-align:center;padding:14px;font-size:14px;font-weight:600;
+  margin-bottom:14px;color:var(--fg);min-height:48px;
+  background:var(--card);border-radius:14px;border:1px solid var(--line);
+  display:grid;place-items:center;
+}
+.status b{color:var(--acc2)}
+
+/* ====== GRID ====== */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+
+/* ====== KARTU ====== */
+.card{
+  position:relative;
+  aspect-ratio:1/1;
+  cursor:pointer;
+  -webkit-user-select:none;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.face{
+  position:absolute;inset:0;
+  border-radius:14px;
+  border:1px solid var(--line);
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .24s ease, transform .28s cubic-bezier(.2,.8,.2,1);
+  will-change:opacity, transform;
+}
+.face svg{
+  width:100%;height:100%;display:block;
+  pointer-events:none;
+}
+.front{
+  background:linear-gradient(135deg,#3d2a5a,#2a1d42);
+  opacity:1;transform:scale(1);z-index:2;
+}
+.back{
+  background:linear-gradient(135deg,rgba(255,168,216,.22),rgba(168,230,255,.22));
+  border-color:rgba(255,168,216,.4);
+  opacity:0;transform:scale(.85);z-index:1;
+}
+.card.flip .front{opacity:0;transform:scale(.85);z-index:1}
+.card.flip .back{opacity:1;transform:scale(1);z-index:2}
+
+.card.matched .back{
+  background:linear-gradient(135deg,rgba(168,255,216,.32),rgba(255,168,216,.22));
+  border-color:var(--ok);
+  box-shadow:0 0 24px rgba(168,255,216,.35);
+}
+.card.matched{animation:matchedPop .42s ease}
+@keyframes matchedPop{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+  100%{transform:scale(1)}
+}
+
+.rst{
+  width:100%;padding:14px;margin-top:14px;border-radius:14px;
+  background:var(--card);border:1px solid var(--line);
+  color:var(--fg);font-size:14px;font-weight:600;font-family:inherit;
+}
+.rst:active{transform:scale(.97)}
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="back-btn" href="../game.html">←</a>
+  <h1>Memory Card</h1>
+</div>
+<div class="hud">
+  <div><span>LANGKAH</span><b id="mv">0</b></div>
+  <div><span>PASANGAN</span><b id="pr">0/8</b></div>
+  <div><span>SKOR</span><b id="sc">0</b></div>
+</div>
+<div class="status" id="st">Tap kartu untuk membuka</div>
+<div class="grid" id="gd"></div>
+<button class="rst" id="rst">⟲ Main Lagi</button>
+
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+  var EMO = ['🍎','🍌','🍇','🍓','🍉','🍒','🥝','🍑'];
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var gdEl = document.getElementById('gd');
+  var mvEl = document.getElementById('mv');
+  var prEl = document.getElementById('pr');
+  var scEl = document.getElementById('sc');
+  var stEl = document.getElementById('st');
+
+  var first, second, lock, moves, matched, score;
+
+  /* ==========================================================
+     Bangun SVG <text> yang benar-benar center.
+     - text-anchor="middle" → center horizontal di x
+     - dy=".35em"           → kompensasi baseline (visual center)
+     ========================================================== */
+  function makeText(size, content, color, weight){
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    svg.setAttribute('xmlns', SVG_NS);
+
+    var t = document.createElementNS(SVG_NS, 'text');
+    t.setAttribute('x', '50');
+    t.setAttribute('y', '50');
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('dy', '.35em');
+    t.setAttribute('font-size', String(size));
+    t.setAttribute('font-family', 'sans-serif');
+    if (weight) t.setAttribute('font-weight', weight);
+    if (color)  t.setAttribute('fill', color);
+    t.textContent = content;
+
+    svg.appendChild(t);
+    return svg;
+  }
+
+  /* Buat satu kartu dengan dua wajah (front & back) */
+  function buildCard(emo){
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.e = emo;
+
+    var front = document.createElement('div');
+    front.className = 'face front';
+    front.appendChild(makeText(58, '?', '#ffa8d8', '800'));
+
+    var back = document.createElement('div');
+    back.className = 'face back';
+    back.appendChild(makeText(78, emo, null, null));
+
+    card.appendChild(front);
+    card.appendChild(back);
+
+    card.addEventListener('click', function(){ flip(card); });
+    return card;
+  }
+
+  /* ============== GAME FLOW ============== */
+  function init(){
+    first = null; second = null; lock = false;
+    moves = 0; matched = 0; score = 0;
+
+    mvEl.textContent = 0;
+    prEl.textContent = '0/8';
+    scEl.textContent = 0;
+    stEl.innerHTML = 'Tap kartu untuk membuka';
+
+    // Deck: 8 emoji × 2
+    var deck = EMO.concat(EMO);
+    for (var i = deck.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+    }
+
+    gdEl.innerHTML = '';
+    deck.forEach(function(e){ gdEl.appendChild(buildCard(e)); });
+  }
+
+  function flip(card){
+    if (lock) return;
+    if (card.classList.contains('flip')) return;
+    if (card.classList.contains('matched')) return;
+
+    card.classList.add('flip');
+    if (window.SFX) SFX.flip();
+    if (navigator.vibrate) navigator.vibrate(10);
+
+    if (!first){ first = card; return; }
+
+    second = card;
+    moves++;
+    mvEl.textContent = moves;
+    lock = true;
+
+    if (first.dataset.e === second.dataset.e){
+      // COCOK
+      setTimeout(function(){
+        first.classList.add('matched');
+        second.classList.add('matched');
+        matched++;
+        score += 20;
+        prEl.textContent = matched + '/8';
+        scEl.textContent = score;
+        if (window.SFX) SFX.pickup();
+        if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
+        first = second = null;
+        lock = false;
+        if (matched === 8) win();
+      }, 400);
+    } else {
+      // TIDAK COCOK
+      score = Math.max(0, score - 2);
+      scEl.textContent = score;
+      if (window.SFX) SFX.tap();
+      setTimeout(function(){
+        first.classList.remove('flip');
+        second.classList.remove('flip');
+        first = second = null;
+        lock = false;
+      }, 720);
+    }
+  }
+
+  function win(){
+    stEl.innerHTML = '<b>🎉 Selesai!</b> Langkah: ' + moves + ' • Skor: ' + score;
+    if (window.SFX) SFX.win();
+    if (navigator.vibrate) navigator.vibrate([60, 50, 60, 50, 120]);
+  }
+
+  document.getElementById('rst').addEventListener('click', init);
+  init();
+})();
+</script>
+</body>
+</html>

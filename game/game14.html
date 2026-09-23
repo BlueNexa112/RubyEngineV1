@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Chess · ToolKit</title>
+<style>
+:root{--bg:#1a1a14;--card:#2a2a1e;--fg:#f5f5e0;--mut:#a8a878;--acc:#fbbf24;--line:rgba(251,191,36,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#3a3a1a,#1a1a14 65%);color:var(--fg);min-height:100dvh;padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700;flex:1}
+.hud{display:flex;justify-content:space-between;gap:6px;margin-bottom:10px}
+.hud div{flex:1;padding:9px;border-radius:10px;background:var(--card);border:1px solid var(--line);text-align:center;font-size:11px}
+.hud .l{color:var(--mut);letter-spacing:1px;font-size:9px}
+.hud b{display:block;font-size:16px;font-weight:800;margin-top:2px}
+.hud .w b{color:#f8fafc}
+.hud .b b{color:#ef4444}
+.status{text-align:center;padding:10px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:10px;font-size:13px;font-weight:700;min-height:40px;display:grid;place-items:center}
+.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:2px solid #5a4a20;margin-bottom:10px}
+.sq{aspect-ratio:1/1;display:grid;place-items:center;cursor:pointer;user-select:none;position:relative;font-size:min(7.5vw,32px);font-family:'Segoe UI Symbol','Arial Unicode MS',sans-serif}
+.sq.l{background:#e8d8a8}
+.sq.d{background:#a07840}
+.sq.sel{box-shadow:inset 0 0 0 4px #fbbf24}
+.sq.mv::after{content:'';position:absolute;width:26%;height:26%;border-radius:50%;background:rgba(34,197,94,.7);box-shadow:0 0 12px rgba(34,197,94,.8)}
+.sq.cap{box-shadow:inset 0 0 0 4px rgba(239,68,68,.85)}
+.sq.last{box-shadow:inset 0 0 0 3px rgba(34,211,238,.7)}
+.piece{position:relative;z-index:2;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.piece.white{color:#fafafa;text-shadow:0 0 1px #000,0 0 2px #000,-1px -1px 0 #555,1px 1px 0 #555}
+.piece.black{color:#1a1a1a;text-shadow:-1px -1px 0 #ddd,1px 1px 0 #ddd,-1px 1px 0 #ddd,1px -1px 0 #ddd}
+.ctrl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.ctrl button{padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:12px;font-weight:700;font-family:inherit}
+.ov{position:fixed;inset:0;background:rgba(10,10,5,.94);backdrop-filter:blur(10px);display:grid;place-items:center;padding:20px;z-index:100;text-align:center}
+.ov h2{font-size:24px;color:var(--acc);margin-bottom:10px}
+.opts{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+.opts button{padding:9px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mut);font-size:12.5px;font-family:inherit}
+.opts button.on{border-color:var(--acc);color:var(--acc);background:rgba(251,191,36,.1)}
+.btn{padding:14px 28px;border-radius:14px;background:linear-gradient(135deg,var(--acc),#f97316);color:#1a1a14;font-size:15px;font-weight:800;border:none;font-family:inherit}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Chess vs AI</h1></div>
+<div class="hud">
+<div class="w"><div class="l">KAMU</div><b>♔</b></div>
+<div class="b"><div class="l">AI</div><b>♚</b></div>
+<div><div class="l">LANGKAH</div><b id="mv" style="color:#fbbf24">0</b></div>
+</div>
+<div class="status" id="st">Pilih bidakmu</div>
+<div class="board" id="bd"></div>
+<div class="ctrl">
+<button id="undo">↶ Undo</button>
+<button id="reset">⟲ Reset</button>
+<button id="help">❔ Info</button>
+</div>
+<div class="ov" id="ov"><div>
+<h2>♟️ Chess</h2>
+<p style="color:#a8a878;font-size:13px;margin-bottom:14px">Pilih tingkat kesulitan</p>
+<div class="opts" id="diff">
+<button class="on" data-d="1">🟢 Normal</button>
+<button data-d="2">🔴 Sulit</button>
+<button data-d="3">☠️ Mustahil</button>
+</div>
+<button class="btn" id="ob">▶ Mulai</button>
+</div></div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+// SOLID glyph untuk SEMUA bidak → coloring pakai CSS agar jelas
+var GLYPH={K:'♚',Q:'♛',R:'♜',B:'♝',N:'♞',P:'♟'};
+var board,sel,moves,aiLevel,turn,mvCount,over,lastMove,loop;
+function initBoard(){
+  board=[
+    ['r','n','b','q','k','b','n','r'],
+    ['p','p','p','p','p','p','p','p'],
+    ['','','','','','','',''],
+    ['','','','','','','',''],
+    ['','','','','','','',''],
+    ['','','','','','','',''],
+    ['P','P','P','P','P','P','P','P'],
+    ['R','N','B','Q','K','B','N','R']
+  ];
+  turn='white';sel=null;moves=[];mvCount=0;over=false;lastMove=null;
+}
+function isWhite(p){return p&&p===p.toUpperCase()}
+function isBlack(p){return p&&p===p.toLowerCase()}
+function inside(r,c){return r>=0&&r<8&&c>=0&&c<8}
+function getMoves(r,c){
+  var p=board[r][c];if(!p)return [];
+  var res=[],isW=isWhite(p),isB=isBlack(p),t=p.toLowerCase();
+  if(t==='p'){
+    var dir=isW?-1:1,startRow=isW?6:1;
+    if(inside(r+dir,c)&&!board[r+dir][c]){
+      res.push([r+dir,c]);
+      if(r===startRow&&!board[r+2*dir][c])res.push([r+2*dir,c]);
+    }
+    [[dir,-1],[dir,1]].forEach(function(d){
+      var nr=r+d[0],nc=c+d[1];
+      if(inside(nr,nc)&&board[nr][nc]&&((isW&&isBlack(board[nr][nc]))||(isB&&isWhite(board[nr][nc]))))res.push([nr,nc]);
+    });
+  } else if(t==='n'){
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(function(d){
+      var nr=r+d[0],nc=c+d[1];if(!inside(nr,nc))return;
+      var tt=board[nr][nc];
+      if(tt&&((isW&&isWhite(tt))||(isB&&isBlack(tt))))return;
+      res.push([nr,nc]);
+    });
+  } else if(t==='k'){
+    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(function(d){
+      var nr=r+d[0],nc=c+d[1];if(!inside(nr,nc))return;
+      var tt=board[nr][nc];
+      if(tt&&((isW&&isWhite(tt))||(isB&&isBlack(tt))))return;
+      res.push([nr,nc]);
+    });
+  } else {
+    var dirs=[];
+    if(t==='r'||t==='q')dirs=dirs.concat([[-1,0],[1,0],[0,-1],[0,1]]);
+    if(t==='b'||t==='q')dirs=dirs.concat([[-1,-1],[-1,1],[1,-1],[1,1]]);
+    dirs.forEach(function(d){
+      var nr=r+d[0],nc=c+d[1];
+      while(inside(nr,nc)){
+        var tt=board[nr][nc];
+        if(!tt)res.push([nr,nc]);
+        else{
+          if((isW&&isBlack(tt))||(isB&&isWhite(tt)))res.push([nr,nc]);
+          break;
+        }
+        nr+=d[0];nc+=d[1];
+      }
+    });
+  }
+  var filtered=[],color=isW?'white':'black';
+  res.forEach(function(m){
+    var cap=board[m[0]][m[1]];
+    board[m[0]][m[1]]=p;board[r][c]='';
+    if(!inCheck(color))filtered.push(m);
+    board[r][c]=p;board[m[0]][m[1]]=cap;
+  });
+  return filtered;
+}
+function findKing(color){
+  var k=color==='white'?'K':'k';
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++)if(board[r][c]===k)return [r,c];
+  return null;
+}
+function attacksSquare(fr,fc,tr,tc){
+  var p=board[fr][fc];if(!p)return false;
+  var t=p.toLowerCase(),dr=tr-fr,dc=tc-fc,adr=Math.abs(dr),adc=Math.abs(dc);
+  var isW=isWhite(p);
+  if(t==='p'){var dir=isW?-1:1;return dr===dir&&adc===1}
+  if(t==='n')return (adr===2&&adc===1)||(adr===1&&adc===2);
+  if(t==='k')return adr<=1&&adc<=1&&(adr+adc)>0;
+  if(t==='r'||t==='q'){
+    if(dr===0||dc===0){
+      var sr=Math.sign(dr),sc=Math.sign(dc),rr=fr+sr,cc=fc+sc;
+      while(rr!==tr||cc!==tc){if(board[rr][cc])return false;rr+=sr;cc+=sc}
+      return true;
+    }
+  }
+  if(t==='b'||t==='q'){
+    if(adr===adc&&adr>0){
+      var sr2=Math.sign(dr),sc2=Math.sign(dc),rr2=fr+sr2,cc2=fc+sc2;
+      while(rr2!==tr||cc2!==tc){if(board[rr2][cc2])return false;rr2+=sr2;cc2+=sc2}
+      return true;
+    }
+  }
+  return false;
+}
+function inCheck(color){
+  var kp=findKing(color);if(!kp)return false;
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+    var p=board[r][c];if(!p)continue;
+    var isOpp=(color==='white'&&isBlack(p))||(color==='black'&&isWhite(p));
+    if(!isOpp)continue;
+    if(attacksSquare(r,c,kp[0],kp[1]))return true;
+  }
+  return false;
+}
+function getAllMoves(color){
+  var all=[];
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+    var p=board[r][c];if(!p)continue;
+    var isMy=(color==='white'&&isWhite(p))||(color==='black'&&isBlack(p));
+    if(!isMy)continue;
+    var mm=getMoves(r,c);
+    mm.forEach(function(m){all.push({from:[r,c],to:m})});
+  }
+  return all;
+}
+var VAL={p:1,n:3,b:3,r:5,q:9,k:100};
+function evaluate(){
+  var s=0;
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+    var p=board[r][c];if(!p)continue;
+    var v=VAL[p.toLowerCase()]||0;
+    s+=isWhite(p)?v:-v;
+  }
+  return s;
+}
+function minimax(depth,alpha,beta,maximizing){
+  if(depth===0)return evaluate();
+  var color=maximizing?'black':'white';
+  var movesList=getAllMoves(color);
+  if(!movesList.length)return maximizing?-10000:10000;
+  var best=maximizing?-Infinity:Infinity;
+  for(var i=0;i<movesList.length;i++){
+    var m=movesList[i];
+    var cap=board[m.to[0]][m.to[1]];
+    board[m.to[0]][m.to[1]]=board[m.from[0]][m.from[1]];
+    board[m.from[0]][m.from[1]]='';
+    var v=minimax(depth-1,alpha,beta,!maximizing);
+    board[m.from[0]][m.from[1]]=board[m.to[0]][m.to[1]];
+    board[m.to[0]][m.to[1]]=cap;
+    if(maximizing){if(v>best)best=v;alpha=Math.max(alpha,v)}
+    else {if(v<best)best=v;beta=Math.min(beta,v)}
+    if(beta<=alpha)break;
+  }
+  return best;
+}
+function aiMove(){
+  var movesList=getAllMoves('black');
+  if(!movesList.length){turn='white';checkEnd();render();return}
+  movesList.sort(function(){return Math.random()-.5});
+  var best=null,bestV=-Infinity;
+  movesList.forEach(function(m){
+    var cap=board[m.to[0]][m.to[1]];
+    board[m.to[0]][m.to[1]]=board[m.from[0]][m.from[1]];
+    board[m.from[0]][m.from[1]]='';
+    var v=minimax(aiLevel-1,-Infinity,Infinity,false);
+    board[m.from[0]][m.from[1]]=board[m.to[0]][m.to[1]];
+    board[m.to[0]][m.to[1]]=cap;
+    if(v>bestV){bestV=v;best=m}
+  });
+  if(best){
+    var p=board[best.from[0]][best.from[1]];
+    board[best.to[0]][best.to[1]]=p;
+    board[best.from[0]][best.from[1]]='';
+    if(board[best.to[0]][best.to[1]]==='p'&&best.to[0]===7)board[best.to[0]][best.to[1]]='q';
+    lastMove=best;SFX.tap();
+  }
+  turn='white';mvCount++;
+  checkEnd();render();
+}
+function checkEnd(){
+  if(inCheck(turn)&&getAllMoves(turn).length===0){
+    over=true;
+    var winner=turn==='white'?'AI':'KAMU';
+    document.getElementById('st').textContent='🏆 '+winner+' MENANG!';
+    if(winner==='KAMU')SFX.win();else SFX.lose();
+    if(navigator.vibrate)navigator.vibrate([80,50,120]);
+    return true;
+  }
+  if(!inCheck(turn)&&getAllMoves(turn).length===0){
+    over=true;
+    document.getElementById('st').textContent='🤝 STALEMATE (Seri)';
+    SFX.tap();return true;
+  }
+  if(inCheck(turn)){
+    document.getElementById('st').textContent='⚠️ RAJA TERANCAM!';
+    SFX.err();return false;
+  }
+  document.getElementById('st').textContent=turn==='white'?'Giliranmu':'AI berpikir…';
+  return false;
+}
+function render(){
+  var bd=document.getElementById('bd');bd.innerHTML='';
+  for(var r=0;r<8;r++)for(var c=0;c<8;c++){
+    var sq=document.createElement('div');
+    sq.className='sq '+((r+c)%2?'d':'l');
+    if(sel&&sel[0]===r&&sel[1]===c)sq.classList.add('sel');
+    if(lastMove&&((lastMove.from[0]===r&&lastMove.from[1]===c)||(lastMove.to[0]===r&&lastMove.to[1]===c)))sq.classList.add('last');
+    var p=board[r][c];
+    if(p){
+      var span=document.createElement('span');
+      span.className='piece '+(isWhite(p)?'white':'black');
+      span.textContent=GLYPH[p.toUpperCase()];
+      sq.appendChild(span);
+    }
+    var isM=moves.some(function(m){return m[0]===r&&m[1]===c});
+    if(isM)sq.classList.add(board[r][c]?'cap':'mv');
+    sq.dataset.r=r;sq.dataset.c=c;
+    sq.addEventListener('click',tap);
+    bd.appendChild(sq);
+  }
+  document.getElementById('mv').textContent=mvCount;
+}
+function tap(e){
+  if(over||turn!=='white')return;
+  var r=+e.currentTarget.dataset.r,c=+e.currentTarget.dataset.c;
+  var p=board[r][c];
+  if(sel){
+    var isM=moves.some(function(m){return m[0]===r&&m[1]===c});
+    if(isM){
+      board[r][c]=board[sel[0]][sel[1]];board[sel[0]][sel[1]]='';
+      lastMove={from:sel,to:[r,c]};
+      if(board[r][c]==='P'&&r===0)board[r][c]='Q';
+      turn='black';mvCount++;sel=null;moves=[];
+      SFX.pickup();if(navigator.vibrate)navigator.vibrate(15);
+      render();
+      if(checkEnd())return;
+      setTimeout(aiMove,300);
+      return;
+    }
+  }
+  if(p&&isWhite(p)){sel=[r,c];moves=getMoves(r,c);SFX.tap();render()}
+  else{sel=null;moves=[];render()}
+}
+document.getElementById('undo').addEventListener('click',function(){
+  initBoard();over=false;document.getElementById('st').textContent='Pilih bidakmu';render();SFX.tap();
+});
+document.getElementById('reset').addEventListener('click',function(){
+  initBoard();over=false;document.getElementById('st').textContent='Pilih bidakmu';render();SFX.tap();
+});
+document.getElementById('help').addEventListener('click',function(){
+  alert('♟️ Chess vs AI\n\n• Tap bidak putih (terang) untuk pilih\n• Tap kotak hijau untuk gerak\n• Tap kotak merah untuk makan\n• Checkmate = menang!\n\nBidak PUTIH dengan outline gelap = KAMU\nBidak HITAM dengan outline terang = AI');
+});
+document.getElementById('diff').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#diff button').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');aiLevel=parseInt(b.dataset.d);SFX.tap();
+});
+document.getElementById('ob').addEventListener('click',function(){
+  initBoard();over=false;
+  document.getElementById('ov').style.display='none';
+  document.getElementById('st').textContent='Pilih bidakmu';
+  render();SFX.ok();
+});
+aiLevel=1;initBoard();render();
+})();
+</script></body></html>

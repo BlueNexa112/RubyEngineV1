@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Space Shooter · ToolKit</title>
+<style>
+:root{--bg:#020510;--card:#0a1024;--fg:#e0e8ff;--mut:#6a7ab0;--acc:#60a5fa;--acc2:#f472b6;--line:rgba(96,165,250,.25);--danger:#ef4444}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{overscroll-behavior:none}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#0f1a3a,#020510 65%);color:var(--fg);min-height:100dvh;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+.back:active{transform:scale(.93)}
+h1{font-size:17px;font-weight:700;flex:1}
+.wave{font-size:12px;font-weight:800;color:var(--acc2);padding:5px 12px;border-radius:10px;background:rgba(244,114,182,.12);border:1px solid rgba(244,114,182,.35);letter-spacing:1px}
+.hud{display:flex;justify-content:space-between;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:12px}
+.hud span{font-size:11px;color:var(--mut);letter-spacing:.5px}
+.hud b{display:block;color:var(--acc);font-size:17px;font-weight:800;margin-top:2px;letter-spacing:2px}
+.wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#020510;touch-action:none}
+canvas{display:block;width:100%;aspect-ratio:3/4;touch-action:none}
+.ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(2,5,16,.92);backdrop-filter:blur(8px);text-align:center;padding:20px;z-index:5}
+.ov h2{font-size:22px;margin-bottom:8px;color:var(--acc);text-shadow:0 0 20px rgba(96,165,250,.6)}
+.ov p{color:var(--mut);font-size:13px;margin-bottom:16px;line-height:1.6}
+.btn{padding:14px 28px;border-radius:14px;background:linear-gradient(135deg,var(--acc),#3b82f6);color:#020510;font-size:15px;font-weight:800;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(96,165,250,.4)}
+.btn:active{transform:scale(.97)}
+.hint{text-align:center;font-size:12px;color:var(--mut);margin-top:10px}
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="back" href="../game.html">←</a>
+  <h1>Space Shooter</h1>
+  <span class="wave" id="wv">WAVE 1</span>
+</div>
+<div class="hud">
+  <span>SKOR<b id="sc">0</b></span>
+  <span>NYAWA<b id="lv">♥♥♥</b></span>
+</div>
+<div class="wrap">
+  <canvas id="cv"></canvas>
+  <div class="ov" id="ov">
+    <div>
+      <h2 id="ot">Space Shooter</h2>
+      <p id="op">Geser jari untuk gerak & tembak otomatis.<br>Musuh menembak cepat — hati-hati!</p>
+      <button class="btn" id="ob">▶ Mulai</button>
+    </div>
+  </div>
+</div>
+<div class="hint">👆 Geser jari di area game</div>
+
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+  var cv  = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W, H;
+
+  // ===== Konstanta =====
+  var PLAYER_BULLET_SPEED = 6.5;
+  var ENEMY_BULLET_SPEED  = 6.5;   // sama dengan player
+  var PLAYER_SHOOT_CD     = 14;
+  var PLAYER_INVULN_MS    = 900;
+
+  // ===== State =====
+  var ship, bullets, enemyBullets, enemies, stars;
+  var score, lives, loop, alive, frame, invulnUntil;
+
+  function size(){
+    var r = cv.getBoundingClientRect();
+    cv.width  = r.width  * devicePixelRatio;
+    cv.height = r.height * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    W = r.width; H = r.height;
+  }
+
+  function reset(){
+    ship = { x:W/2, y:H-70, w:36, h:36 };
+    bullets = [];
+    enemyBullets = [];
+    enemies = [];
+    stars = [];
+    for(var i=0;i<60;i++){
+      stars.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        s: Math.random()*1.8 + 0.3,
+        c: Math.random() < 0.5 ? '#60a5fa' : '#f472b6'
+      });
+    }
+    score = 0;
+    lives = 3;
+    frame = 0;
+    invulnUntil = 0;
+    alive = true;
+    document.getElementById('sc').textContent = 0;
+    document.getElementById('lv').textContent = '♥♥♥';
+    document.getElementById('wv').textContent = 'WAVE 1';
+  }
+
+  function upd(){
+    document.getElementById('sc').textContent = score;
+    document.getElementById('lv').textContent = '♥'.repeat(Math.max(0, lives)) || '—';
+    document.getElementById('wv').textContent = 'WAVE ' + waveNumber();
+  }
+
+  function waveNumber(){ return 1 + Math.floor(frame / 600); }
+
+  function draw(){
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#020510');
+    g.addColorStop(1, '#0a1024');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    stars.forEach(function(s){
+      ctx.fillStyle = s.c;
+      ctx.globalAlpha = 0.6;
+      ctx.fillRect(s.x, s.y, s.s, s.s);
+      ctx.globalAlpha = 1;
+    });
+
+    // Peluru player
+    ctx.shadowColor = '#60a5fa';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#60a5fa';
+    bullets.forEach(function(b){ ctx.fillRect(b.x - 2, b.y, 4, 12); });
+    ctx.shadowBlur = 0;
+
+    // Peluru musuh (merah, lebih besar biar kelihatan)
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 14;
+    enemyBullets.forEach(function(b){
+      ctx.fillStyle = 'rgba(239,68,68,.35)';
+      ctx.fillRect(b.x - 1.5, b.y - 12, 3, 10);
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 3.5, 0, 7);
+      ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+
+    // Player
+    var invuln = performance.now() < invulnUntil;
+    ctx.shadowColor = '#60a5fa';
+    ctx.shadowBlur = 20;
+    ctx.globalAlpha = invuln ? (0.35 + Math.sin(frame * 0.6) * 0.35) : 1;
+    ctx.fillStyle = '#e0e8ff';
+    ctx.beginPath();
+    ctx.moveTo(ship.x, ship.y - ship.h/2);
+    ctx.lineTo(ship.x - ship.w/2, ship.y + ship.h/2);
+    ctx.lineTo(ship.x - ship.w/4, ship.y + ship.h/4);
+    ctx.lineTo(ship.x, ship.y + ship.h/2);
+    ctx.lineTo(ship.x + ship.w/4, ship.y + ship.h/4);
+    ctx.lineTo(ship.x + ship.w/2, ship.y + ship.h/2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#60a5fa';
+    ctx.beginPath();
+    ctx.arc(ship.x, ship.y - 4, 3, 0, 7);
+    ctx.fill();
+
+    // Musuh
+    enemies.forEach(function(e){
+      ctx.shadowColor = '#f472b6';
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = '#f472b6';
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.r, 0, 7);
+      ctx.fill();
+
+      // Charging: 24 frame terakhir sebelum tembak
+      var charging = e.shootTimer < 24;
+      ctx.fillStyle = charging ? '#fff' : '#e0e8ff';
+      ctx.beginPath(); ctx.arc(e.x - 4, e.y - 2, 3, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(e.x + 4, e.y - 2, 3, 0, 7); ctx.fill();
+      ctx.fillStyle = charging ? '#ef4444' : '#020510';
+      ctx.beginPath(); ctx.arc(e.x - 4, e.y - 2, 1.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(e.x + 4, e.y - 2, 1.5, 0, 7); ctx.fill();
+      if(charging){
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(e.x - 3, e.y + e.r - 3, 6, 4);
+      }
+      ctx.shadowBlur = 0;
+    });
+  }
+
+  function step(){
+    if(!alive) return;
+    frame++;
+
+    stars.forEach(function(s){
+      s.y += s.s;
+      if(s.y > H){ s.y = 0; s.x = Math.random()*W; }
+    });
+
+    // ===== Kesulitan =====
+    var wave = waveNumber();
+    var spawnRate = Math.max(22, 66 - (wave - 1) * 5);
+    var doubleSpawn = wave >= 4;
+
+    // ===== Player tembak =====
+    if(frame % PLAYER_SHOOT_CD === 0){
+      bullets.push({ x: ship.x, y: ship.y - 18 });
+      SFX.shoot();
+    }
+
+    bullets.forEach(function(b){ b.y -= PLAYER_BULLET_SPEED; });
+    bullets = bullets.filter(function(b){ return b.y > -12; });
+
+    // ===== Spawn musuh =====
+    if(frame % spawnRate === 0){
+      enemies.push(makeEnemy());
+      if(doubleSpawn && frame % 2 === 0) enemies.push(makeEnemy());
+    }
+
+    // ===== Musuh gerak & TEMBAK (LEBIH CEPAT) =====
+    enemies.forEach(function(e){
+      e.y += e.vy;
+      e.shootTimer--;
+
+      if(e.shootTimer <= 0 && e.y > 10 && e.y < H - 60){
+        enemyBullets.push({ x: e.x, y: e.y + e.r });
+
+        // --- TIMER TEMBAK JAUH LEBIH CEPAT ---
+        // Wave 1  : 25–60  frame  (~0.4–1.0 s)
+        // Wave 5  : 15–40  frame  (~0.25–0.65 s)
+        // Wave 10 : 10–24  frame  (~0.16–0.4 s)
+        var minCd = Math.max(10, 25 - (wave - 1) * 2);
+        var maxCd = Math.max(24, 60 - (wave - 1) * 4);
+        e.shootTimer = minCd + Math.floor(Math.random() * (maxCd - minCd));
+
+        // Wave tinggi: sesekali burst 3 peluru beruntun
+        if(wave >= 3 && Math.random() < 0.25){
+          e.shootTimer = 6; // langsung tembak lagi sebentar
+        }
+
+        SFX.hit();
+      }
+    });
+
+    enemyBullets.forEach(function(b){ b.y += ENEMY_BULLET_SPEED; });
+    enemyBullets = enemyBullets.filter(function(b){ return b.y < H + 12; });
+
+    // Peluru player vs musuh
+    for(var i = enemies.length - 1; i >= 0; i--){
+      var e = enemies[i];
+      for(var j = bullets.length - 1; j >= 0; j--){
+        var b = bullets[j];
+        if(Math.hypot(b.x - e.x, b.y - e.y) < e.r + 5){
+          enemies.splice(i, 1);
+          bullets.splice(j, 1);
+          score += 5;
+          upd();
+          SFX.explode();
+          if(navigator.vibrate) navigator.vibrate(15);
+          break;
+        }
+      }
+    }
+
+    // Peluru musuh vs player
+    var now = performance.now();
+    if(now >= invulnUntil){
+      for(var i = enemyBullets.length - 1; i >= 0; i--){
+        var b = enemyBullets[i];
+        if(Math.hypot(b.x - ship.x, b.y - ship.y) < 16){
+          enemyBullets.splice(i, 1);
+          lives--;
+          invulnUntil = now + PLAYER_INVULN_MS;
+          upd();
+          SFX.hit();
+          if(navigator.vibrate) navigator.vibrate(80);
+          if(lives <= 0) return over();
+          break;
+        }
+      }
+    }
+
+    // Musuh vs player
+    if(performance.now() >= invulnUntil){
+      for(var i = enemies.length - 1; i >= 0; i--){
+        var e = enemies[i];
+        if(Math.hypot(ship.x - e.x, ship.y - e.y) < e.r + 16){
+          enemies.splice(i, 1);
+          lives--;
+          invulnUntil = performance.now() + PLAYER_INVULN_MS;
+          upd();
+          SFX.hit();
+          if(navigator.vibrate) navigator.vibrate(80);
+          if(lives <= 0) return over();
+          break;
+        }
+      }
+    }
+
+    enemies = enemies.filter(function(e){ return e.y < H + 30; });
+
+    var wvEl = document.getElementById('wv');
+    var expected = 'WAVE ' + wave;
+    if(wvEl.textContent !== expected) wvEl.textContent = expected;
+
+    draw();
+  }
+
+  function makeEnemy(){
+    var wave = waveNumber();
+    return {
+      x: 20 + Math.random() * (W - 40),
+      y: -20,
+      r: 15,
+      vy: 1.6 + Math.random() * 0.9 + Math.min(wave * 0.15, 1.2),
+      // Timer awal: 12–36 frame  (~0.2–0.6 s) → langsung agresif
+      shootTimer: 12 + Math.floor(Math.random() * 24)
+    };
+  }
+
+  function over(){
+    alive = false;
+    clearInterval(loop);
+    setTimeout(function(){ SFX.lose(); }, 200);
+    document.getElementById('ot').textContent = 'Game Over';
+    document.getElementById('op').innerHTML =
+      'Skor: <b style="color:#60a5fa">' + score + '</b><br>Wave: ' + waveNumber();
+    document.getElementById('ob').textContent = '⟲ Main Lagi';
+    document.getElementById('ov').style.display = 'grid';
+    if(navigator.vibrate) navigator.vibrate(120);
+  }
+
+  function start(){
+    size();
+    reset();
+    document.getElementById('ov').style.display = 'none';
+    SFX.ok();
+    clearInterval(loop);
+    loop = setInterval(step, 16);
+  }
+
+  function move(x){ if(!alive) return; ship.x = Math.max(20, Math.min(W - 20, x)); }
+
+  cv.addEventListener('touchstart', function(e){
+    e.preventDefault();
+    var r = cv.getBoundingClientRect();
+    move(e.touches[0].clientX - r.left);
+  }, {passive:false});
+
+  cv.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    var r = cv.getBoundingClientRect();
+    move(e.touches[0].clientX - r.left);
+  }, {passive:false});
+
+  cv.addEventListener('mousemove', function(e){
+    if(e.buttons){
+      var r = cv.getBoundingClientRect();
+      move(e.clientX - r.left);
+    }
+  });
+
+  document.getElementById('ob').addEventListener('click', start);
+  window.addEventListener('resize', function(){ size(); if(!alive) draw(); });
+
+  size(); reset(); alive = false; draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Snake · ToolKit</title>
+<style>
+:root{--bg:#0a1408;--card:#101e0c;--fg:#d4ffcf;--mut:#5a8a52;--acc:#6ee76e;--acc2:#f5d547;--line:rgba(110,231,110,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#142a12,#0a1408 65%);color:var(--fg);min-height:100dvh;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.hud{display:flex;justify-content:space-between;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:12px}
+.hud span{font-size:11px;color:var(--mut);letter-spacing:.5px;text-align:center;flex:1}
+.hud b{display:block;color:var(--acc);font-size:17px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#050d05;box-shadow:inset 0 0 40px rgba(110,231,110,.06);touch-action:none}
+canvas{display:block;width:100%;aspect-ratio:1/1}
+
+/* ============================================
+   SNAKE MENU — NEON GARDEN ARCADE
+   ============================================ */
+.ov{position:absolute;inset:0;display:grid;place-items:center;z-index:5;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 25%, rgba(110,231,110,.22), transparent 55%),
+    radial-gradient(circle at 85% 85%, rgba(245,213,71,.14), transparent 50%),
+    radial-gradient(circle at 15% 80%, rgba(110,231,110,.12), transparent 55%),
+    rgba(5,13,5,.97);
+  backdrop-filter:blur(12px);padding:16px}
+.ov::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(110,231,110,.85), transparent),
+    radial-gradient(1px 1px at 72% 18%, rgba(255,255,255,.6), transparent),
+    radial-gradient(2px 2px at 44% 84%, rgba(245,213,71,.85), transparent),
+    radial-gradient(1px 1px at 88% 62%, rgba(110,231,110,.7), transparent),
+    radial-gradient(1px 1px at 10% 68%, rgba(255,255,255,.5), transparent),
+    radial-gradient(2px 2px at 62% 48%, rgba(110,231,110,.6), transparent),
+    radial-gradient(1px 1px at 30% 12%, rgba(245,213,71,.6), transparent);
+  animation:snTwinkle 4s ease-in-out infinite}
+@keyframes snTwinkle{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.02)}}
+
+.menu-sn{position:relative;width:100%;max-width:340px;display:flex;flex-direction:column;
+  align-items:center;gap:12px;z-index:1}
+
+/* Ular orbit */
+.snake-orbit{position:relative;width:86px;height:86px;flex-shrink:0}
+.snake-dot{position:absolute;width:16px;height:16px;border-radius:50%;top:50%;left:50%;
+  margin:-8px 0 0 -8px;background:var(--acc);
+  box-shadow:0 0 14px var(--acc),0 0 28px rgba(110,231,110,.55)}
+.sd1{animation:snOrbit 2.6s linear infinite}
+.sd2{width:13px;height:13px;margin:-6.5px 0 0 -6.5px;opacity:.85;animation:snOrbit 2.6s linear infinite -.22s}
+.sd3{width:10px;height:10px;margin:-5px 0 0 -5px;opacity:.65;animation:snOrbit 2.6s linear infinite -.44s}
+@keyframes snOrbit{
+  0%{transform:rotate(0deg) translateX(31px) rotate(0deg)}
+  100%{transform:rotate(360deg) translateX(31px) rotate(-360deg)}}
+.snake-food{position:absolute;top:50%;left:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;
+  background:var(--acc2);border-radius:50%;
+  box-shadow:0 0 14px var(--acc2),0 0 26px rgba(245,213,71,.6);
+  transform:translateX(31px);animation:snFood 1.4s ease-in-out infinite}
+@keyframes snFood{
+  0%,100%{transform:translateX(31px) scale(1)}
+  50%{transform:translateX(31px) scale(1.5)}}
+
+/* Judul shimmer */
+.sn-title{font-size:34px;font-weight:900;letter-spacing:6px;line-height:1;
+  background:linear-gradient(90deg,var(--acc2),var(--acc),var(--acc2),var(--acc));
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  animation:snShimmer 4s linear infinite;text-align:center;
+  filter:drop-shadow(0 0 14px rgba(110,231,110,.6))}
+@keyframes snShimmer{to{background-position:-220% 0}}
+.sn-sub{font-size:9.5px;color:var(--mut);letter-spacing:4px;text-transform:uppercase;margin-top:-6px}
+
+/* Mode cards */
+.mode-grid{width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.mode-card{background:linear-gradient(180deg, rgba(20,42,18,.8), rgba(10,22,8,.75));
+  border:1px solid rgba(110,231,110,.22);border-radius:14px;padding:10px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;transition:.18s;font-family:inherit;color:var(--mut);
+  -webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px)}
+.mode-card i{font-style:normal;font-size:22px;line-height:1;filter:grayscale(.7) brightness(.85);transition:.18s}
+.mode-card b{font-size:11px;font-weight:800;letter-spacing:.3px;color:var(--fg)}
+.mode-card span{font-size:8.5px;letter-spacing:.2px;text-align:center;line-height:1.15}
+.mode-card.on{border-color:var(--acc);
+  background:linear-gradient(180deg, rgba(110,231,110,.22), rgba(20,42,18,.85));
+  box-shadow:0 0 22px rgba(110,231,110,.45),inset 0 0 14px rgba(110,231,110,.18);
+  color:var(--fg)}
+.mode-card.on i{filter:none;transform:scale(1.18)}
+.mode-card:active{transform:scale(.95)}
+
+/* High score badge */
+.sn-hi{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;
+  background:rgba(245,213,71,.08);border:1px solid rgba(245,213,71,.35);
+  font-size:10.5px;letter-spacing:1.5px;font-weight:800;color:var(--mut)}
+.sn-hi b{color:var(--acc2);font-size:14px;text-shadow:0 0 10px rgba(245,213,71,.6);font-variant-numeric:tabular-nums}
+
+/* Start button */
+.sn-start{width:100%;padding:15px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc),#3dbd3d);color:#0a1408;
+  font-family:inherit;font-size:14px;font-weight:900;letter-spacing:3px;
+  border-radius:14px;position:relative;overflow:hidden;
+  box-shadow:0 8px 30px rgba(110,231,110,.5),0 0 0 1px rgba(255,255,255,.15) inset;
+  animation:snPulse 2s infinite;-webkit-tap-highlight-color:transparent}
+.sn-start span{position:relative;z-index:1}
+.sn-start::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  transform:translateX(-100%);animation:snShine 2.6s infinite}
+.sn-start:active{transform:scale(.97)}
+@keyframes snPulse{
+  0%{box-shadow:0 0 0 0 rgba(110,231,110,.55),0 8px 30px rgba(110,231,110,.5)}
+  70%{box-shadow:0 0 0 14px rgba(110,231,110,0),0 8px 30px rgba(110,231,110,.5)}
+  100%{box-shadow:0 0 0 0 rgba(110,231,110,0),0 8px 30px rgba(110,231,110,.5)}}
+@keyframes snShine{100%{transform:translateX(100%)}}
+
+.sn-hint{font-size:9.5px;color:var(--mut);letter-spacing:1.5px;
+  animation:snHint 3s ease-in-out infinite}
+@keyframes snHint{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* Game over state */
+.menu-sn.over .sn-hint{display:none}
+.menu-sn.over .snake-orbit{transform:scale(.7);opacity:.85}
+.menu-sn.over .sn-title{font-size:24px;letter-spacing:4px}
+.menu-sn.over .sn-sub{color:var(--fg);font-size:13px;font-weight:800;letter-spacing:1px;text-transform:none;animation:none}
+.menu-sn.over .sn-sub b{color:var(--acc);text-shadow:0 0 12px currentColor}
+.menu-sn.over .sn-start{animation:none}
+
+/* ===== D-PAD CROSS LAYOUT (BESAR) ===== */
+.dpad{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,1fr);
+  gap:10px;
+  max-width:290px;
+  margin:18px auto 0;
+  touch-action:none;user-select:none;-webkit-user-select:none}
+.dpad .sp{opacity:0;pointer-events:none;visibility:hidden}
+.dpad button{
+  height:74px;border-radius:18px;
+  border:1px solid var(--line);
+  background:var(--card);color:var(--acc);
+  font-size:28px;font-weight:800;font-family:inherit;
+  display:grid;place-items:center;
+  touch-action:none;-webkit-user-select:none;user-select:none;
+  transition:transform .08s ease-out,background .08s ease-out,color .08s ease-out;
+  will-change:transform}
+.dpad button.down{background:var(--acc);color:#0a1408;transform:scale(.92);transition:none}
+.dpad button[data-d="U"]{grid-column:2;grid-row:1}
+.dpad button[data-d="L"]{grid-column:1;grid-row:2}
+.dpad button[data-d="R"]{grid-column:3;grid-row:2}
+.dpad button[data-d="D"]{grid-column:2;grid-row:3}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Snake</h1></div>
+<div class="hud">
+<span>SKOR<b id="sc">0</b></span><span>PANJANG<b id="ln">3</b></span><span>HIGH<b id="hi">0</b></span>
+</div>
+<div class="wrap">
+<canvas id="cv"></canvas>
+<div class="ov" id="ov">
+  <div class="menu-sn" id="menuS">
+    <div class="snake-orbit">
+      <div class="snake-dot sd1"></div>
+      <div class="snake-dot sd2"></div>
+      <div class="snake-dot sd3"></div>
+      <div class="snake-food"></div>
+    </div>
+    <div class="sn-title" id="ot">SNAKE</div>
+    <div class="sn-sub" id="op">🐍 neon garden arcade</div>
+
+    <div class="mode-grid" id="modes">
+      <button class="mode-card on" data-m="classic">
+        <i>🐍</i><b>Klasik</b><span>Dinding mematikan</span>
+      </button>
+      <button class="mode-card" data-m="portal">
+        <i>🌀</i><b>Portal</b><span>Tembus dinding</span>
+      </button>
+      <button class="mode-card" data-m="zen">
+        <i>🧘</i><b>Zen</b><span>Santai & konstan</span>
+      </button>
+    </div>
+
+    <div class="sn-hi">🏆 HIGH SCORE <b id="hi2">0</b></div>
+
+    <button class="sn-start" id="ob"><span>▶ MULAI</span></button>
+    <div class="sn-hint">swipe · dpad · keyboard</div>
+  </div>
+</div>
+</div>
+<!-- D-pad: ↑ / ← → / ↓ -->
+<div class="dpad" id="dp">
+  <button class="sp"></button>
+  <button data-d="U">▲</button>
+  <button class="sp"></button>
+  <button data-d="L">◀</button>
+  <button class="sp"></button>
+  <button data-d="R">▶</button>
+  <button class="sp"></button>
+  <button data-d="D">▼</button>
+  <button class="sp"></button>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var G=20,cell,snake,dir,nd,food,score,alive,loop,speed,frame;
+var mode='classic',hi=0;
+var menu=document.getElementById('menuS');
+
+/* ===== MODE CONFIG ===== */
+var MODES={
+  classic:{wrap:false,speedUp:true,startSpeed:130,minSpeed:65},
+  portal :{wrap:true, speedUp:true,startSpeed:130,minSpeed:65},
+  zen    :{wrap:true, speedUp:false,startSpeed:160,minSpeed:160}
+};
+
+/* ===== INPUT BUFFER ===== */
+var buf=[];
+var DIRS={U:{x:0,y:-1},D:{x:0,y:1},L:{x:-1,y:0},R:{x:1,y:0}};
+
+function loadHi(){
+  hi=+(localStorage.getItem('snake_hi_'+mode)||0);
+  document.getElementById('hi').textContent=hi;
+  document.getElementById('hi2').textContent=hi;
+}
+function size(){var r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);cell=r.width/G}
+function reset(){
+  snake=[{x:8,y:10},{x:7,y:10},{x:6,y:10}];
+  dir={x:1,y:0};nd={x:1,y:0};
+  score=0;frame=0;buf=[];alive=true;
+  var M=MODES[mode];
+  speed=M.startSpeed;
+  place();upd();
+}
+function place(){do{food={x:Math.floor(Math.random()*G),y:Math.floor(Math.random()*G)}}while(snake.some(function(s){return s.x===food.x&&s.y===food.y}))}
+function upd(){
+  document.getElementById('sc').textContent=score;
+  document.getElementById('ln').textContent=snake.length;
+  document.getElementById('hi').textContent=hi;
+}
+function draw(){
+  var w=cv.clientWidth;
+  ctx.fillStyle='#050d05';ctx.fillRect(0,0,w,w);
+  ctx.strokeStyle='rgba(110,231,110,.06)';ctx.lineWidth=1;
+  for(var i=0;i<=G;i++){
+    ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,w);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(w,i*cell);ctx.stroke();
+  }
+  /* Border warna beda per mode */
+  if(mode==='portal'){ctx.strokeStyle='rgba(34,211,238,.55)';ctx.lineWidth=3;ctx.strokeRect(1.5,1.5,w-3,w-3)}
+  else if(mode==='zen'){ctx.strokeStyle='rgba(245,213,71,.45)';ctx.lineWidth=3;ctx.strokeRect(1.5,1.5,w-3,w-3)}
+
+  ctx.shadowColor='#f5d547';ctx.shadowBlur=18;
+  ctx.fillStyle='#f5d547';
+  ctx.beginPath();ctx.arc((food.x+.5)*cell,(food.y+.5)*cell,cell*.34,0,7);ctx.fill();
+  ctx.shadowBlur=0;
+
+  snake.forEach(function(s,i){
+    var c=i===0?'#6ee76e':'#3dbd3d';
+    if(mode==='portal'&&i===0)c='#22d3ee';
+    if(mode==='zen'&&i===0)c='#f5d547';
+    ctx.shadowColor=c;ctx.shadowBlur=i===0?16:6;
+    ctx.fillStyle=c;ctx.beginPath();
+    var pad=i===0?1:2;
+    if(ctx.roundRect){ctx.roundRect(s.x*cell+pad,s.y*cell+pad,cell-pad*2,cell-pad*2,i===0?6:4)}
+    else{ctx.rect(s.x*cell+pad,s.y*cell+pad,cell-pad*2,cell-pad*2)}
+    ctx.fill();
+  });
+  ctx.shadowBlur=0;
+}
+function step(){
+  if(buf.length){
+    var next=buf.shift();
+    if(!(next.x===-dir.x&&next.y===-dir.y)) nd=next;
+  }
+  dir=nd;
+  var h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+
+  /* Wrap atau kill berdasarkan mode */
+  if(MODES[mode].wrap){
+    h.x=(h.x+G)%G;
+    h.y=(h.y+G)%G;
+  } else {
+    if(h.x<0||h.y<0||h.x>=G||h.y>=G)return over();
+  }
+
+  if(snake.some(function(s){return s.x===h.x&&s.y===h.y}))return over();
+  snake.unshift(h);
+  if(h.x===food.x&&h.y===food.y){
+    score+=10;
+    if(score>hi){hi=score;localStorage.setItem('snake_hi_'+mode,hi)}
+    place();SFX.pickup();
+    if(navigator.vibrate)navigator.vibrate(15);
+  } else snake.pop();
+  upd();draw();
+}
+function over(){
+  alive=false;clearInterval(loop);buf=[];
+  SFX.lose();if(navigator.vibrate)navigator.vibrate([100,60,100]);
+  menu.classList.add('over');
+  document.getElementById('ot').textContent='💀 GAME OVER';
+  document.getElementById('op').innerHTML='MODE <b>'+mode.toUpperCase()+'</b> · SKOR <b>'+score+'</b>';
+  document.getElementById('ob').innerHTML='<span>↻ MAIN LAGI</span>';
+  document.getElementById('ov').style.display='grid';
+}
+function tick(){
+  if(!alive)return;
+  step();frame++;
+  var M=MODES[mode];
+  if(M.speedUp && frame%60===0 && speed>M.minSpeed){
+    speed-=6;clearInterval(loop);loop=setInterval(tick,speed);
+  }
+}
+function start(){
+  reset();
+  menu.classList.remove('over');
+  document.getElementById('ov').style.display='none';
+  SFX.ok();
+  clearInterval(loop);loop=setInterval(tick,speed);
+}
+document.getElementById('ob').addEventListener('click',start);
+
+/* ===== MODE PICKER ===== */
+document.getElementById('modes').addEventListener('click',function(e){
+  var b=e.target.closest('.mode-card');if(!b)return;
+  document.querySelectorAll('.mode-card').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');
+  mode=b.dataset.m;
+  loadHi();
+  SFX.tap();
+});
+
+/* ===== D-PAD HANDLER ===== */
+var dp=document.getElementById('dp');
+var heldBtn=null,repeatT=null,holdTimer=null;
+
+function pushDir(key){
+  if(!alive)return;
+  var d=DIRS[key];if(!d)return;
+  var last=buf.length?buf[buf.length-1]:dir;
+  if(d.x===last.x&&d.y===last.y)return;
+  if(d.x===-last.x&&d.y===-last.y)return;
+  if(buf.length>=2)buf.shift();
+  buf.push(d);
+}
+function onDown(e){
+  var b=e.target.closest('.dpad button[data-d]');
+  if(!b)return;
+  e.preventDefault();
+  clearDown();
+  heldBtn=b;b.classList.add('down');
+  try{b.setPointerCapture(e.pointerId)}catch(x){}
+  pushDir(b.dataset.d);
+  SFX.tap();
+  if(navigator.vibrate)navigator.vibrate(8);
+  clearTimeout(holdTimer);clearInterval(repeatT);
+  holdTimer=setTimeout(function(){
+    repeatT=setInterval(function(){
+      if(heldBtn)pushDir(heldBtn.dataset.d);
+    },90);
+  },220);
+}
+function clearDown(){
+  clearTimeout(holdTimer);clearInterval(repeatT);holdTimer=null;repeatT=null;
+  if(heldBtn){heldBtn.classList.remove('down');heldBtn=null;}
+  var a=dp.querySelectorAll('.down');for(var i=0;i<a.length;i++)a[i].classList.remove('down');
+}
+dp.addEventListener('pointerdown',onDown,{passive:false});
+window.addEventListener('pointerup',clearDown,true);
+window.addEventListener('pointercancel',clearDown,true);
+window.addEventListener('blur',clearDown);
+dp.addEventListener('contextmenu',function(e){e.preventDefault()});
+dp.addEventListener('dragstart',function(e){e.preventDefault()});
+
+/* ===== KEYBOARD ===== */
+var KM={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R'};
+document.addEventListener('keydown',function(e){
+  var k=KM[e.key];if(!k)return;
+  e.preventDefault();pushDir(k);
+});
+
+/* ===== SWIPE di area canvas ===== */
+var sx=0,sy=0,sw=false;
+cv.parentElement.addEventListener('pointerdown',function(e){if(e.target.closest('.dpad'))return;sx=e.clientX;sy=e.clientY;sw=true},{passive:true});
+cv.parentElement.addEventListener('pointerup',function(e){
+  if(!sw)return;sw=false;
+  var dx=e.clientX-sx,dy=e.clientY-sy;
+  if(Math.abs(dx)<24&&Math.abs(dy)<24)return;
+  if(Math.abs(dx)>Math.abs(dy))pushDir(dx>0?'R':'L');else pushDir(dy>0?'D':'U');
+  SFX.tap();
+});
+window.addEventListener('resize',function(){size();draw()});
+
+/* Init */
+loadHi();
+size();reset();alive=false;draw();
+})();
+</script></body></html>

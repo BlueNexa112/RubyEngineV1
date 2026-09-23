@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Air Hockey · ToolKit</title>
+<style>
+:root{--bg:#0a021a;--card:#1a0a30;--fg:#f0e0ff;--mut:#8870b8;--acc:#a855f7;--acc2:#22d3ee;--line:rgba(168,85,247,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#2a0f4a,#0a021a 65%);color:var(--fg);min-height:100dvh;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700;flex:1}
+.hud{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.hud div{padding:10px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:center}
+.hud .l{font-size:10px;color:var(--mut);letter-spacing:1px}
+.hud b{display:block;font-size:28px;font-weight:900;margin-top:2px}
+.hud .p b{color:var(--acc2)}.hud .a b{color:var(--acc)}
+.serve-info{text-align:center;padding:9px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:10px;font-size:12.5px;font-weight:800;letter-spacing:1.2px;transition:.25s}
+.serve-info.p{color:var(--acc2);border-color:var(--acc2);box-shadow:0 0 20px rgba(34,211,238,.3)}
+.serve-info.a{color:var(--acc);border-color:var(--acc);box-shadow:0 0 20px rgba(168,85,247,.3)}
+.wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#050110;margin-bottom:12px}
+canvas{display:block;width:100%;aspect-ratio:3/4;touch-action:none}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ctrl button{padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:13px;font-weight:700;font-family:inherit}
+
+/* ============================================
+   AIR HOCKEY MENU — COSMIC ARENA STYLE
+   ============================================ */
+.ov{position:absolute;inset:0;display:grid;place-items:center;z-index:5;overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(168,85,247,.30), transparent 55%),
+    radial-gradient(circle at 80% 85%, rgba(34,211,238,.18), transparent 50%),
+    radial-gradient(circle at 15% 75%, rgba(244,114,182,.15), transparent 55%),
+    rgba(10,2,26,.97);
+  backdrop-filter:blur(12px);
+  padding:18px;
+}
+.ov::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:
+    radial-gradient(1px 1px at 22% 28%, rgba(255,255,255,.85), transparent),
+    radial-gradient(1px 1px at 68% 62%, rgba(255,255,255,.6), transparent),
+    radial-gradient(2px 2px at 42% 82%, rgba(34,211,238,.8), transparent),
+    radial-gradient(1px 1px at 88% 18%, rgba(168,85,247,.85), transparent),
+    radial-gradient(1px 1px at 12% 68%, rgba(255,255,255,.5), transparent),
+    radial-gradient(1px 1px at 58% 12%, rgba(255,255,255,.6), transparent),
+    radial-gradient(2px 2px at 78% 48%, rgba(244,114,182,.7), transparent),
+    radial-gradient(1px 1px at 32% 42%, rgba(255,255,255,.5), transparent);
+  background-size:100% 100%;
+  animation:ahTwinkle 4s ease-in-out infinite;
+}
+@keyframes ahTwinkle{
+  0%,100%{opacity:.55;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.02)}
+}
+.menu-ah{position:relative;width:100%;max-width:330px;display:flex;flex-direction:column;
+  align-items:center;gap:12px;z-index:1}
+.ah-orbit{position:relative;width:72px;height:72px;display:grid;place-items:center;flex-shrink:0}
+.ah-puck{width:28px;height:28px;border-radius:50%;position:relative;z-index:2;
+  background:radial-gradient(circle at 35% 30%, #f0e0ff, #a855f7 55%, #22d3ee);
+  box-shadow:0 0 22px rgba(168,85,247,.85), 0 0 55px rgba(34,211,238,.35);
+  animation:ahSpin 3s linear infinite}
+@keyframes ahSpin{
+  0%{transform:rotate(0deg) scale(1)}
+  50%{transform:rotate(180deg) scale(1.12)}
+  100%{transform:rotate(360deg) scale(1)}
+}
+.ah-ring{position:absolute;inset:0;border-radius:50%;border:1.5px dashed rgba(168,85,247,.55);
+  animation:ahRing 9s linear infinite}
+.ah-ring2{position:absolute;inset:12px;border-radius:50%;border:1.5px solid rgba(34,211,238,.45);
+  animation:ahRing 5s linear infinite reverse}
+@keyframes ahRing{to{transform:rotate(360deg)}}
+.ah-title{font-size:25px;font-weight:900;letter-spacing:4px;line-height:1;
+  background:linear-gradient(90deg,var(--acc2),var(--acc),var(--acc2),var(--acc));
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  animation:ahShimmer 4s linear infinite;
+  text-align:center;filter:drop-shadow(0 0 14px rgba(168,85,247,.6))}
+@keyframes ahShimmer{to{background-position:-220% 0}}
+.ah-sub{font-size:9.5px;color:var(--mut);letter-spacing:4px;text-transform:uppercase;margin-top:-4px}
+.ah-grid{width:100%;display:flex;flex-direction:column;gap:8px}
+.ah-card{width:100%;background:linear-gradient(180deg, rgba(40,15,80,.75), rgba(20,6,50,.7));
+  border:1px solid rgba(168,85,247,.3);border-radius:16px;padding:11px 12px;
+  backdrop-filter:blur(6px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 6px 22px rgba(0,0,0,.35)}
+.ah-card-t{font-size:9.5px;color:var(--acc);letter-spacing:2.5px;font-weight:800;margin-bottom:8px;padding-left:2px}
+.ah-opts{display:flex;gap:6px}
+.ah-opts button{flex:1;padding:7px 4px;border-radius:10px;
+  background:rgba(10,2,26,.6);border:1px solid rgba(168,85,247,.22);
+  color:var(--mut);font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  cursor:pointer;transition:.2s;-webkit-tap-highlight-color:transparent}
+.ah-opts button i{font-style:normal;font-size:14px;filter:grayscale(1) brightness(.7);transition:.2s;line-height:1}
+.ah-opts button span{font-size:9.5px;font-weight:700;letter-spacing:.3px}
+.ah-opts button.on{
+  background:linear-gradient(135deg, rgba(168,85,247,.35), rgba(34,211,238,.22));
+  border-color:var(--acc2);color:var(--fg);
+  box-shadow:0 0 18px rgba(168,85,247,.45),inset 0 0 12px rgba(34,211,238,.18)}
+.ah-opts button.on i{filter:none;transform:scale(1.15)}
+.ah-start{width:100%;padding:15px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  color:#0a021a;font-family:inherit;
+  font-size:13.5px;font-weight:900;letter-spacing:2.5px;
+  border-radius:14px;position:relative;overflow:hidden;
+  box-shadow:0 8px 30px rgba(168,85,247,.55),0 0 0 1px rgba(255,255,255,.15) inset;
+  -webkit-tap-highlight-color:transparent}
+.ah-start::before{content:'';position:absolute;inset:-2px;
+  background:conic-gradient(from 0deg, transparent 0 30%, rgba(255,255,255,.35) 45%, transparent 60%);
+  animation:ahRot 3.4s linear infinite;opacity:.55;
+  filter:blur(6px)}
+.ah-start span{position:relative;z-index:1}
+.ah-start:active{transform:scale(.97)}
+@keyframes ahRot{to{transform:rotate(360deg)}}
+.ah-hint{font-size:9.5px;color:var(--mut);letter-spacing:1.5px;
+  animation:ahHintPulse 3s ease-in-out infinite}
+@keyframes ahHintPulse{0%,100%{opacity:.6}50%{opacity:1}}
+.menu-ah.over .ah-grid,
+.menu-ah.over .ah-hint{display:none}
+.menu-ah.over .ah-orbit{transform:scale(.85)}
+.menu-ah.over .ah-title{font-size:22px;letter-spacing:3px}
+.menu-ah.over .ah-sub{color:var(--fg);font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:none;animation:none}
+.menu-ah.over .ah-sub b{color:var(--acc2);text-shadow:0 0 12px currentColor}
+.menu-ah.over .ah-start{box-shadow:0 8px 30px rgba(34,211,238,.55),0 0 0 1px rgba(255,255,255,.15) inset}
+</style></head>
+
+<body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Air Hockey</h1></div>
+<div class="hud">
+<div class="p"><div class="l">KAMU</div><b id="sp">0</b></div>
+<div class="a"><div class="l">AI</div><b id="sa">0</b></div>
+</div>
+<div class="serve-info p" id="serveInfo">SERVE: KAMU</div>
+<div class="wrap">
+<canvas id="cv"></canvas>
+<div class="ov" id="ov">
+  <div class="menu-ah" id="menuAH">
+    <div class="ah-orbit">
+      <div class="ah-ring"></div>
+      <div class="ah-ring2"></div>
+      <div class="ah-puck"></div>
+    </div>
+    <div class="ah-title" id="ot">AIR HOCKEY</div>
+    <div class="ah-sub" id="op">❄ cosmic ice arena ❄</div>
+
+    <div class="ah-grid">
+      <div class="ah-card">
+        <div class="ah-card-t">◇ MODE AI</div>
+        <div class="ah-opts" id="diff">
+          <button data-d="easy"><i>🟢</i><span>Santai</span></button>
+          <button class="on" data-d="normal"><i>🟡</i><span>Seimbang</span></button>
+          <button data-d="hard"><i>🔴</i><span>Brutal</span></button>
+        </div>
+      </div>
+      <div class="ah-card">
+        <div class="ah-card-t">◇ DURASI PERTANDINGAN</div>
+        <div class="ah-opts" id="to">
+          <button class="on" data-t="5"><i>⚡</i><span>5 poin</span></button>
+          <button data-t="10"><i>🏆</i><span>10 poin</span></button>
+        </div>
+      </div>
+    </div>
+
+    <button class="ah-start" id="ob"><span>▶ MULAI PERTANDINGAN</span></button>
+    <div class="ah-hint">🌀 geser puck dengan jari</div>
+  </div>
+</div>
+</div>
+<div class="ctrl">
+<button id="pause">❚❚ Pause</button>
+<button id="reset">⟲ Reset</button>
+</div>
+  
+  <script src="../js/sfx.js"></script>
+<script>
+(function(){
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var W,H,player,ai,puck,scoreP,scoreA,alive,paused,loop,diff,target;
+var touchX,touchY,particles=[];
+var serveOwner='player';
+var waiting=false, serveTimer=0;
+var frame=0, stuckTimer=0, lastPuckX=0, lastPuckY=0, aiStuckTimer=0;
+var menu=document.getElementById('menuAH');
+
+function size(){
+  var r=cv.getBoundingClientRect();
+  cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  W=r.width;H=r.height;
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function reset(){
+  player={x:W/2,y:H-60,r:26,vx:0,vy:0};
+  ai    ={x:W/2,y:60,r:26,vx:0,vy:0};
+  puck  ={x:W/2,y:H/2,vx:0,vy:0,r:13};
+  scoreP=0;scoreA=0;alive=false;paused=false;
+  touchX=W/2;touchY=H-60;particles=[];
+  frame=0;stuckTimer=0;aiStuckTimer=0;
+  lastPuckX=W/2;lastPuckY=H/2;
+  serveOwner=Math.random()<.5?'player':'ai';
+  upd();
+  prepareServe();
+}
+function upd(){document.getElementById('sp').textContent=scoreP;document.getElementById('sa').textContent=scoreA}
+function setServeInfo(){
+  var el=document.getElementById('serveInfo');
+  el.className='serve-info '+(serveOwner==='player'?'p':'a');
+  el.textContent='SERVE: '+(serveOwner==='player'?'KAMU':'AI');
+}
+function prepareServe(){
+  setServeInfo();
+  waiting=true;
+  if(serveOwner==='player'){
+    puck.x = player.x;
+    puck.y = player.y - player.r - puck.r - 3;
+    puck.vx=0;puck.vy=0;
+  } else {
+    puck.x = ai.x;
+    puck.y = ai.y + ai.r + puck.r + 3;
+    puck.vx=0;puck.vy=0;
+    serveTimer=setTimeout(aiServe,700);
+  }
+}
+function playerServe(){
+  if(!waiting||serveOwner!=='player'||!alive)return;
+  waiting=false;
+  var ang=(Math.random()*0.7-0.35);
+  puck.vx=Math.sin(ang)*6;
+  puck.vy=-Math.abs(Math.cos(ang)*6);
+  SFX.shoot();
+}
+function aiServe(){
+  if(!waiting||serveOwner!=='ai'||!alive)return;
+  waiting=false;
+  var ang=(Math.random()*0.7-0.35);
+  puck.vx=Math.sin(ang)*6;
+  puck.vy=Math.abs(Math.cos(ang)*6);
+  SFX.shoot();
+}
+function addParticles(x,y,color){
+  for(var i=0;i<20;i++){
+    var a=Math.random()*Math.PI*2,sp=1+Math.random()*4;
+    particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,c:color});
+  }
+}
+function drawCircle(p,color,active){
+  ctx.save();
+  if(active){ctx.shadowColor=color;ctx.shadowBlur=24;ctx.fillStyle=color}
+  else{ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,255,.15)'}
+  ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle=active?'rgba(10,2,26,.85)':'rgba(10,2,26,.5)';
+  ctx.beginPath();ctx.arc(p.x,p.y,p.r*0.5,0,7);ctx.fill();
+  if(active){
+    ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r-3,0,7);ctx.stroke();
+  }
+  ctx.restore();
+}
+function draw(){
+  var g=ctx.createRadialGradient(W/2,H/2,10,W/2,H/2,Math.max(W,H)*0.7);
+  g.addColorStop(0,'#0a0520');g.addColorStop(1,'#050110');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle='rgba(168,85,247,.5)';ctx.lineWidth=3;ctx.strokeRect(2,2,W-4,H-4);
+  ctx.strokeStyle='rgba(34,211,238,.35)';ctx.lineWidth=2;ctx.setLineDash([10,8]);
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();ctx.setLineDash([]);
+  ctx.strokeStyle='rgba(168,85,247,.4)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(W/2,H/2,50,0,7);ctx.stroke();
+
+  ctx.fillStyle='rgba(168,85,247,.25)';ctx.fillRect(W/2-70,0,140,6);
+  ctx.fillStyle='rgba(34,211,238,.25)';ctx.fillRect(W/2-70,H-6,140,6);
+
+  particles.forEach(function(p){
+    ctx.globalAlpha=p.life;ctx.fillStyle=p.c;
+    ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,7);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  drawCircle(ai, '#a855f7', serveOwner==='ai'||(!waiting&&puck.vy<0));
+  drawCircle(player, '#22d3ee', serveOwner==='player'||(!waiting&&puck.vy>0));
+
+  ctx.shadowColor='#fff';ctx.shadowBlur=18;
+  ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.arc(puck.x,puck.y,puck.r,0,7);ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle=(serveOwner==='player'?'#22d3ee':'#a855f7');
+  ctx.beginPath();ctx.arc(puck.x,puck.y,puck.r*0.55,0,7);ctx.fill();
+
+  if(waiting&&serveOwner==='player'){
+    ctx.fillStyle='rgba(34,211,238,.9)';
+    ctx.font='bold 12px system-ui';ctx.textAlign='center';
+    ctx.fillText('TAP untuk serve', W/2, H/2 + 40);
+  }
+}
+function step(){
+  if(!alive||paused)return;
+  frame++;
+
+  var oldX=player.x,oldY=player.y;
+  player.x += (touchX - player.x) * 0.32;
+  player.y += (touchY - player.y) * 0.32;
+  player.x = clamp(player.x, player.r, W-player.r);
+  player.y = clamp(player.y, H/2+player.r, H-player.r);
+  player.vx=player.x-oldX;player.vy=player.y-oldY;
+
+  var sp=diff==='easy'?0.06:diff==='normal'?0.12:0.19;
+  var aiTX, aiTY;
+  if(!waiting && puck.y < H*0.55 && puck.vy < 0.5){
+    aiTX = puck.x;
+    aiTY = Math.max(ai.r, Math.min(H/2-ai.r, puck.y - 15));
+  } else {
+    aiTX = W/2 + Math.sin(frame*0.015)*W*0.15;
+    aiTY = 60;
+  }
+  ai.x += (aiTX - ai.x) * sp;
+  ai.y += (aiTY - ai.y) * sp;
+  ai.x = clamp(ai.x, ai.r, W-ai.r);
+  ai.y = clamp(ai.y, ai.r, H/2-ai.r);
+
+  if(Math.abs(ai.x - W/2) > W*0.35 && puck.y > H*0.5){
+    aiStuckTimer++;
+    if(aiStuckTimer > 60){
+      ai.x += (W/2 - ai.x) * 0.3;
+      ai.y += (60 - ai.y) * 0.3;
+      aiStuckTimer=0;
+    }
+  } else aiStuckTimer=0;
+
+  if(waiting){
+    if(serveOwner==='player'){
+      puck.x = player.x;
+      puck.y = player.y - player.r - puck.r - 3;
+    } else {
+      puck.x = ai.x;
+      puck.y = ai.y + ai.r + puck.r + 3;
+    }
+    draw();
+    return;
+  }
+
+  puck.x += puck.vx; puck.y += puck.vy;
+  puck.vx *= 0.995; puck.vy *= 0.995;
+
+  if(puck.x-puck.r<0){puck.x=puck.r;puck.vx=Math.abs(puck.vx)}
+  if(puck.x+puck.r>W){puck.x=W-puck.r;puck.vx=-Math.abs(puck.vx)}
+
+  // ===== CEK GOAL DULU =====
+  var inGoalX = puck.x > W/2-70 && puck.x < W/2+70;
+  if(inGoalX && puck.y - puck.r < 0){
+    scoreP++;upd();addParticles(puck.x,0,'#22d3ee');
+    SFX.win();if(navigator.vibrate)navigator.vibrate([60,40,80]);
+    if(scoreP>=target)return over('KAMU');
+    serveOwner='ai';
+    prepareServe();return;
+  }
+  if(inGoalX && puck.y + puck.r > H){
+    scoreA++;upd();addParticles(puck.x,H,'#a855f7');
+    SFX.lose();
+    if(scoreA>=target)return over('AI');
+    serveOwner='player';
+    prepareServe();return;
+  }
+
+  if(puck.y-puck.r<0){puck.y=puck.r;puck.vy=Math.abs(puck.vy)}
+  if(puck.y+puck.r>H){puck.y=H-puck.r;puck.vy=-Math.abs(puck.vy)}
+
+  stuckTimer++;
+  if(stuckTimer > 30){
+    var moved = Math.hypot(puck.x-lastPuckX, puck.y-lastPuckY);
+    if(moved < 3){
+      var cx=W/2, cy=H/2;
+      var ddx=cx-puck.x, ddy=cy-puck.y, dd=Math.hypot(ddx,ddy)||1;
+      puck.vx += (ddx/dd)*7;
+      puck.vy += (ddy/dd)*7;
+    }
+    lastPuckX=puck.x; lastPuckY=puck.y;
+    stuckTimer=0;
+  }
+  var sp2=Math.hypot(puck.vx,puck.vy);
+  var nearCorner = (puck.x < W*0.13 || puck.x > W*0.87) &&
+                   (puck.y < H*0.13 || puck.y > H*0.87);
+  if(nearCorner && sp2 < 3.5){
+    var cx2=W/2, cy2=H/2;
+    var ddx2=cx2-puck.x, ddy2=cy2-puck.y, dd2=Math.hypot(ddx2,ddy2)||1;
+    puck.vx += (ddx2/dd2)*3.5;
+    puck.vy += (ddy2/dd2)*3.5;
+  }
+  var sp3=Math.hypot(puck.vx,puck.vy);
+  if(sp3>0 && sp3<1.2){
+    puck.vx *= 1.05; puck.vy *= 1.05;
+  }
+
+  var dx=puck.x-player.x,dy=puck.y-player.y,d=Math.hypot(dx,dy);
+  if(d<puck.r+player.r && d>0.001){
+    var nx=dx/d,ny=dy/d,ov=puck.r+player.r-d;
+    puck.x+=nx*ov;puck.y+=ny*ov;
+    var relVx=puck.vx-player.vx,relVy=puck.vy-player.vy;
+    var dot=relVx*nx+relVy*ny;
+    if(dot<0){
+      puck.vx-=1.85*dot*nx;puck.vy-=1.85*dot*ny;
+      puck.vx+=player.vx*0.18;puck.vy+=player.vy*0.18;
+    }
+    var spP=Math.hypot(puck.vx,puck.vy);
+    if(spP>15){puck.vx=puck.vx/spP*15;puck.vy=puck.vy/spP*15}
+    if(spP<4){puck.vx*=1.4;puck.vy*=1.4}
+    SFX.hit();if(navigator.vibrate)navigator.vibrate(15);
+    addParticles(puck.x,puck.y,'#22d3ee');
+  }
+  var dx2=puck.x-ai.x,dy2=puck.y-ai.y,d2=Math.hypot(dx2,dy2);
+  if(d2<puck.r+ai.r && d2>0.001){
+    var nx2=dx2/d2,ny2=dy2/d2,ov2=puck.r+ai.r-d2;
+    puck.x+=nx2*ov2;puck.y+=ny2*ov2;
+    var rel2=puck.vx*nx2+puck.vy*ny2;
+    if(rel2<0){puck.vx-=2*rel2*nx2;puck.vy-=2*rel2*ny2}
+    var spA=Math.hypot(puck.vx,puck.vy);
+    if(spA<4){puck.vx*=1.3;puck.vy*=1.3}
+    SFX.hit();
+    addParticles(puck.x,puck.y,'#a855f7');
+  }
+
+  particles.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vx*=0.95;p.vy*=0.95;p.life-=0.025});
+  particles=particles.filter(function(p){return p.life>0});
+  draw();
+}
+function over(w){
+  alive=false;waiting=false;clearInterval(loop);
+  if(serveTimer)clearTimeout(serveTimer);
+
+  menu.classList.add('over');
+  var titleEl=document.getElementById('ot');
+  titleEl.textContent = w==='KAMU' ? '🏆 CHAMPION' : '💀 DEFEAT';
+  document.getElementById('op').innerHTML='SKOR AKHIR <b>'+scoreP+'</b> — <b>'+scoreA+'</b> AI';
+  document.getElementById('ob').innerHTML='<span>↻ MAIN LAGI</span>';
+  document.getElementById('ov').style.display='grid';
+
+  if(w==='KAMU'){SFX.win();if(navigator.vibrate)navigator.vibrate([80,50,120])}
+  else{SFX.lose();if(navigator.vibrate)navigator.vibrate([120,60,120])}
+}
+function start(){
+  if(serveTimer)clearTimeout(serveTimer);
+  menu.classList.remove('over');
+  document.getElementById('ot').textContent='AIR HOCKEY';
+  document.getElementById('op').textContent='❄ cosmic ice arena ❄';
+  document.getElementById('ob').innerHTML='<span>▶ MULAI PERTANDINGAN</span>';
+
+  reset();alive=true;
+  document.getElementById('ov').style.display='none';
+  SFX.ok();
+  clearInterval(loop);loop=setInterval(step,16);
+}
+document.getElementById('ob').addEventListener('click',start);
+document.getElementById('pause').addEventListener('click',function(){
+  if(!alive)return;paused=!paused;
+  this.textContent=paused?'▶ Lanjut':'❚❚ Pause';SFX.tap();
+});
+document.getElementById('reset').addEventListener('click',function(){
+  clearInterval(loop);if(serveTimer)clearTimeout(serveTimer);
+  alive=false;paused=false;waiting=false;
+  menu.classList.remove('over');
+  document.getElementById('ot').textContent='AIR HOCKEY';
+  document.getElementById('op').textContent='❄ cosmic ice arena ❄';
+  document.getElementById('ob').innerHTML='<span>▶ MULAI PERTANDINGAN</span>';
+  document.getElementById('ov').style.display='grid';
+  document.getElementById('pause').textContent='❚❚ Pause';
+  reset();draw();
+});
+document.getElementById('diff').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#diff button').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');diff=b.dataset.d;SFX.tap();
+});
+document.getElementById('to').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#to button').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');target=parseInt(b.dataset.t);SFX.tap();
+});
+function move(e){
+  var r=cv.getBoundingClientRect();
+  var t=e.touches?e.touches[0]:e;
+  touchX=t.clientX-r.left;touchY=t.clientY-r.top;
+}
+function onTap(){
+  if(waiting&&serveOwner==='player'&&alive)playerServe();
+}
+cv.addEventListener('touchstart',function(e){e.preventDefault();move(e)},{passive:false});
+cv.addEventListener('touchmove',function(e){e.preventDefault();move(e)},{passive:false});
+cv.addEventListener('touchend',function(e){e.preventDefault();onTap()},{passive:false});
+cv.addEventListener('mousemove',function(e){if(e.buttons)move(e)});
+cv.addEventListener('click',function(){onTap()});
+diff='normal';target=5;
+size();reset();draw();
+window.addEventListener('resize',function(){size();reset();draw()});
+})();
+</script>
+</body></html>

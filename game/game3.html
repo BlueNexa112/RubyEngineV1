@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Tebak Angka · ToolKit</title>
+<style>
+:root{--bg:#1a0508;--card:#2a0a0f;--fg:#ffe8ec;--mut:#a8757a;--acc:#ff2e63;--acc2:#08d9d6;--line:rgba(255,46,99,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#3d0a12,#1a0508 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.hud div{padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:center}
+.hud span{font-size:10px;color:var(--mut);letter-spacing:1px}
+.hud b{display:block;color:var(--acc);font-size:20px;font-weight:800;margin-top:3px}
+.msg{padding:24px 18px;border-radius:20px;text-align:center;font-size:16px;font-weight:700;margin-bottom:14px;background:var(--card);border:1px solid var(--line);min-height:90px;display:grid;place-items:center;transition:.2s;line-height:1.4}
+.msg.hi{background:rgba(255,46,99,.12);border-color:var(--acc);color:var(--acc)}
+.msg.lo{background:rgba(8,217,214,.12);border-color:var(--acc2);color:var(--acc2)}
+.msg.win{background:linear-gradient(135deg,rgba(8,217,214,.2),rgba(255,46,99,.2));border-color:var(--acc2);color:#fff}
+.inr{display:flex;gap:8px;margin-bottom:12px}
+.inr input{flex:1;padding:16px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:22px;text-align:center;font-weight:800;font-family:inherit}
+.inr input:focus{outline:none;border-color:var(--acc)}
+.inr button{padding:0 22px;border-radius:14px;background:linear-gradient(135deg,var(--acc),#d81b4c);color:#fff;font-size:15px;font-weight:800;border:none;font-family:inherit;box-shadow:0 6px 20px rgba(255,46,99,.35)}
+.inr button:active{transform:scale(.96)}
+.hist{padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:13px;color:var(--mut);min-height:56px;line-height:1.8}
+.hist .tag{display:inline-block;padding:2px 10px;border-radius:8px;margin:2px 4px 2px 0;font-weight:700;font-size:12px}
+.hist .tag.big{background:rgba(255,46,99,.15);color:var(--acc)}
+.hist .tag.sm{background:rgba(8,217,214,.15);color:var(--acc2)}
+.hist .tag.hit{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a0508}
+.rst{width:100%;padding:14px;margin-top:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:14px;font-weight:600;font-family:inherit}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Tebak Angka</h1></div>
+<div class="hud">
+<div><span>PERCOBAAN</span><b id="tr">0</b></div>
+<div><span>SKOR</span><b id="sc">0</b></div>
+<div><span>HIGH</span><b id="hi">0</b></div>
+</div>
+<div class="msg" id="msg">Masukkan angka 1–100</div>
+<div class="inr">
+<input id="in" type="number" inputmode="numeric" placeholder="?" min="1" max="100">
+<button id="go">Tebak</button>
+</div>
+<div class="hist" id="hist">Riwayat tebakan muncul di sini…</div>
+<button class="rst" id="rst">⟲ Mulai Ulang</button>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var target,tries,hi=+(localStorage.getItem('tebak2_hi')||0),done=false;
+function init(){
+  target=Math.floor(Math.random()*100)+1;tries=0;done=false;
+  document.getElementById('tr').textContent=0;
+  document.getElementById('sc').textContent=0;
+  document.getElementById('hi').textContent=hi;
+  var m=document.getElementById('msg');m.className='msg';m.textContent='Masukkan angka 1–100';
+  document.getElementById('hist').innerHTML='Riwayat tebakan muncul di sini…';
+  document.getElementById('in').value='';
+}
+function setMsg(t,c){var m=document.getElementById('msg');m.className='msg '+(c||'');m.textContent=t}
+document.getElementById('go').addEventListener('click',submit);
+document.getElementById('in').addEventListener('keydown',function(e){if(e.key==='Enter')submit()});
+function submit(){
+  if(done)return;
+  var v=parseInt(document.getElementById('in').value);
+  if(!v||v<1||v>100){setMsg('Masukkan angka 1–100','');SFX.err();return}
+  tries++;document.getElementById('tr').textContent=tries;
+  var hist=document.getElementById('hist');
+  if(hist.textContent.indexOf('Riwayat')===0)hist.innerHTML='';
+  if(v===target){
+    done=true;var score=Math.max(10,100-(tries-1)*8);
+    document.getElementById('sc').textContent=score;
+    if(score>hi){hi=score;localStorage.setItem('tebak2_hi',hi);document.getElementById('hi').textContent=hi}
+    setMsg('🎉 Benar! Angka '+target+' • Skor '+score,'win');
+    hist.innerHTML+='<span class="tag hit">'+v+' ✓</span>';
+    SFX.win();if(navigator.vibrate)navigator.vibrate([80,50,80]);
+  } else if(v>target){
+    setMsg('📉 Terlalu BESAR','hi');
+    hist.innerHTML+='<span class="tag big">'+v+' ↓</span>';
+    SFX.tap();
+  } else {
+    setMsg('📈 Terlalu KECIL','lo');
+    hist.innerHTML+='<span class="tag sm">'+v+' ↑</span>';
+    SFX.tap();
+  }
+  document.getElementById('in').value='';
+}
+document.getElementById('rst').addEventListener('click',init);
+init();
+})();
+</script></body></html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Billiard · ToolKit</title>
+<style>
+:root{--bg:#0a1a0f;--card:#132a1a;--fg:#e0f5e8;--mut:#6a9a7a;--acc:#22c55e;--acc2:#fbbf24;--line:rgba(34,197,94,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#153a24,#0a1a0f 65%);color:var(--fg);min-height:100dvh;padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700;flex:1}
+.hud{display:flex;justify-content:space-between;padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:10px;font-size:12px}
+.hud div{text-align:center;flex:1}
+.hud .l{color:var(--mut);letter-spacing:1px;font-size:10px}
+.hud b{display:block;color:var(--acc2);font-size:16px;font-weight:800;margin-top:2px}
+.wrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#0a1a0f}
+canvas{display:block;width:100%;aspect-ratio:3/4;touch-action:none}
+.ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,26,15,.92);backdrop-filter:blur(8px);text-align:center;padding:20px;z-index:5}
+.ov h2{font-size:22px;margin-bottom:8px;color:var(--acc2)}
+.ov p{color:var(--mut);font-size:13px;margin-bottom:16px;line-height:1.5}
+.btn{padding:14px 28px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a1a0f;font-size:15px;font-weight:800;border:none;font-family:inherit}
+.ctrl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+.ctrl button{padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:12px;font-weight:700;font-family:inherit}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Billiard 8-Ball</h1></div>
+<div class="hud">
+<div><div class="l">BOLA MASUK</div><b id="pot">0</b></div>
+<div><div class="l">PUKULAN</div><b id="shot">0</b></div>
+<div><div class="l">SISA</div><b id="left">15</b></div>
+</div>
+<div class="wrap">
+<canvas id="cv"></canvas>
+<div class="ov" id="ov"><div>
+<h2>Billiard 8-Ball</h2>
+<p>Drag dari bola putih ke arah berlawanan, lalu lepas untuk memukul</p>
+<button class="btn" id="ob">▶ Mulai</button>
+</div></div>
+</div>
+<div class="ctrl">
+<button id="reset">⟲ Reset</button>
+<button id="help">❔ Cara Main</button>
+<button id="newg">🔄 Main Lagi</button>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var W,H,bx,by,bw,bh;
+var balls=[],potted=0,shots=0,alive=false,dragging=false,dragStart,dragEnd,pockets=[];
+function size(){
+  var r=cv.getBoundingClientRect();
+  cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  W=r.width;H=r.height;
+  var pad=W*0.06;bx=pad;by=pad;bw=W-pad*2;bh=H-pad*2;
+  layoutPockets();
+}
+function layoutPockets(){
+  pockets=[];
+  var pr=W*0.05;
+  var mx=bx+bw/2,my=by+bh/2;
+  pockets.push({x:bx,y:by,r:pr});
+  pockets.push({x:mx,y:by-2,r:pr});
+  pockets.push({x:bx+bw,y:by,r:pr});
+  pockets.push({x:bx,y:by+bh,r:pr});
+  pockets.push({x:mx,y:by+bh+2,r:pr});
+  pockets.push({x:bx+bw,y:by+bh,r:pr});
+}
+function initBalls(){
+  balls=[];potted=0;shots=0;
+  var r=W*0.022;
+  balls.push({x:bx+bw*0.22,y:by+bh/2,vx:0,vy:0,r:r,c:'#fff',n:0});
+  var startX=bx+bw*0.62,startY=by+bh/2;
+  var spacing=r*2+3;
+  var colors=['#fbbf24','#3b82f6','#ef4444','#8b5cf6','#f97316','#22c55e','#a855f7','#dc2626','#1a1a1a','#fbbf24','#3b82f6','#ef4444','#8b5cf6','#f97316','#22c55e'];
+  var idx=0;
+  for(var row=0;row<5;row++){
+    for(var col=0;col<=row;col++){
+      var x=startX+row*spacing*0.87;
+      var y=startY-(row*spacing)/2+col*spacing;
+      balls.push({x:x,y:y,vx:0,vy:0,r:r,c:colors[idx],n:idx+1});
+      idx++;
+    }
+  }
+  updateHud();
+}
+function updateHud(){
+  document.getElementById('pot').textContent=potted;
+  document.getElementById('shot').textContent=shots;
+  document.getElementById('left').textContent=15-potted;
+}
+function draw(){
+  var g=ctx.createRadialGradient(bx+bw/2,by+bh/2,20,bx+bw/2,by+bh/2,bw);
+  g.addColorStop(0,'#1a4a2e');g.addColorStop(1,'#0a2a15');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#5a3510';ctx.fillRect(0,0,W,by-W*0.017);
+  ctx.fillRect(0,H-by+W*0.017,W,H);
+  ctx.fillRect(0,0,bx-W*0.017,H);
+  ctx.fillRect(W-bx+W*0.017,0,W,H);
+  ctx.strokeStyle='#2a1505';ctx.lineWidth=1;ctx.strokeRect(bx,by,bw,bh);
+  pockets.forEach(function(p){
+    ctx.fillStyle='#000';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();
+    ctx.strokeStyle='rgba(251,191,36,.6)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.stroke();
+  });
+
+  // Aim line
+  if(dragging&&balls[0]){
+    var white=balls[0];
+    var dx=dragStart.x-dragEnd.x,dy=dragStart.y-dragEnd.y;
+    var len=Math.hypot(dx,dy);
+    if(len>8){
+      var ux=dx/len,uy=dy/len;
+      ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.setLineDash([6,6]);
+      ctx.beginPath();ctx.moveTo(white.x,white.y);ctx.lineTo(white.x+ux*200,white.y+uy*200);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  balls.forEach(function(b){
+    if(b.pocketed)return;
+    ctx.shadowColor=b.c;ctx.shadowBlur=6;ctx.fillStyle=b.c;
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,7);ctx.fill();
+    ctx.shadowBlur=0;
+    if(b.n>=9){
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r*0.72,0,7);ctx.fill();
+      ctx.fillStyle=b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r*0.58,0,7);ctx.fill();
+    } else if(b.n>0){
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r*0.48,0,7);ctx.fill();
+      ctx.fillStyle='#000';ctx.font='bold '+(b.r*0.72)+'px system-ui';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(b.n,b.x,b.y);
+    }
+    ctx.fillStyle='rgba(255,255,255,.4)';
+    ctx.beginPath();ctx.arc(b.x-b.r*0.35,b.y-b.r*0.35,b.r*0.22,0,7);ctx.fill();
+  });
+
+  // Cue stick
+  if(dragging&&balls[0]){
+    var white=balls[0];
+    var dx=dragStart.x-dragEnd.x,dy=dragStart.y-dragEnd.y;
+    var len=Math.hypot(dx,dy);
+    if(len>8){
+      var ux=dx/len,uy=dy/len;
+      var stickLen=Math.min(200,W*0.4);
+      var sx=white.x-ux*(white.r+8),sy=white.y-uy*(white.r+8);
+      ctx.strokeStyle='#c8a06a';ctx.lineWidth=6;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx-ux*stickLen,sy-uy*stickLen);ctx.stroke();
+      ctx.strokeStyle='#f5e0b8';ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(sx-ux*stickLen,sy-uy*stickLen);
+      ctx.lineTo(sx-ux*(stickLen-25),sy-uy*(stickLen-25));
+      ctx.stroke();
+    }
+  }
+}
+function step(){
+  if(!alive)return;
+  var anyMoving=false;
+  // Balls physics
+  balls.forEach(function(b){
+    if(b.pocketed)return;
+    b.x+=b.vx;b.y+=b.vy;
+    b.vx*=0.991;b.vy*=0.991;
+    var sp=Math.hypot(b.vx,b.vy);
+    if(sp<0.06){b.vx=0;b.vy=0}
+    else anyMoving=true;
+    // Wall bounce
+    if(b.x-b.r<bx){b.x=bx+b.r;b.vx=-b.vx*0.92}
+    if(b.x+b.r>bx+bw){b.x=bx+bw-b.r;b.vx=-b.vx*0.92}
+    if(b.y-b.r<by){b.y=by+b.r;b.vy=-b.vy*0.92}
+    if(b.y+b.r>by+bh){b.y=by+bh-b.r;b.vy=-b.vy*0.92}
+    // Pockets
+    for(var i=0;i<pockets.length;i++){
+      if(b.pocketed)break;
+      var p=pockets[i];
+      if(Math.hypot(b.x-p.x,b.y-p.y)<p.r*1.25){
+        b.pocketed=true;b.vx=0;b.vy=0;
+        SFX.pickup();if(navigator.vibrate)navigator.vibrate(20);
+        if(b.n===0){
+          setTimeout(function(){b.x=bx+bw*0.22;b.y=by+bh/2;b.pocketed=false},500);
+        } else {potted++;updateHud()}
+      }
+    }
+  });
+  // Ball-ball collision
+  for(var i=0;i<balls.length;i++){
+    if(balls[i].pocketed)continue;
+    for(var j=i+1;j<balls.length;j++){
+      if(balls[j].pocketed)continue;
+      var a=balls[i],b=balls[j];
+      var dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),minD=a.r+b.r;
+      if(d<minD&&d>0.001){
+        var nx=dx/d,ny=dy/d,ov=minD-d;
+        a.x-=nx*ov*0.5;a.y-=ny*ov*0.5;b.x+=nx*ov*0.5;b.y+=ny*ov*0.5;
+        var dvx=b.vx-a.vx,dvy=b.vy-a.vy;
+        var dot=dvx*nx+dvy*ny;
+        if(dot<0){
+          // Elastic collision (equal mass)
+          var imp=dot;
+          a.vx+=imp*nx;a.vy+=imp*ny;b.vx-=imp*nx;b.vy-=imp*ny;
+          var speed=Math.hypot(dvx,dvy);
+          if(speed>1.5){SFX.hit();if(navigator.vibrate)navigator.vibrate(8)}
+        }
+      }
+    }
+  }
+  // Re-check moving status after collision
+  if(!anyMoving){
+    var stillMoving=false;
+    balls.forEach(function(b){if(!b.pocketed&&Math.hypot(b.vx,b.vy)>0.06)stillMoving=true});
+    anyMoving=stillMoving;
+  }
+  draw();
+  if(potted>=15&&!anyMoving){
+    setTimeout(function(){
+      document.getElementById('ov').style.display='grid';
+      document.querySelector('.ov h2').textContent='🎉 SELESAI!';
+      document.querySelector('.ov p').textContent='Semua bola masuk dalam '+shots+' pukulan';
+      document.getElementById('ob').textContent='🔄 Main Lagi';
+      SFX.win();if(navigator.vibrate)navigator.vibrate([80,60,80,60,120]);
+    },400);
+  }
+}
+function shoot(){
+  var white=balls[0];if(!white||white.pocketed)return;
+  var dx=dragStart.x-dragEnd.x,dy=dragStart.y-dragEnd.y;
+  var len=Math.hypot(dx,dy);
+  if(len<10)return;
+  var power=Math.min(len/140,1);
+  var speed=power*18;
+  var ux=dx/len,uy=dy/len;
+  white.vx=ux*speed;white.vy=uy*speed;
+  shots++;updateHud();SFX.shoot();
+}
+function pos(e){
+  var r=cv.getBoundingClientRect();
+  var t=e.touches?e.touches[0]:e;
+  return {x:t.clientX-r.left,y:t.clientY-r.top};
+}
+function onStart(e){
+  if(!alive)return;e.preventDefault();
+  var p=pos(e);var white=balls[0];
+  if(!white||white.pocketed)return;
+  if(Math.hypot(p.x-white.x,p.y-white.y)<90){
+    dragging=true;dragStart={x:p.x,y:p.y};dragEnd={x:p.x,y:p.y};draw();
+  }
+}
+function onMove(e){
+  if(!dragging)return;e.preventDefault();
+  var p=pos(e);dragEnd={x:p.x,y:p.y};draw();
+}
+function onEnd(e){
+  if(!dragging)return;
+  dragging=false;shoot();draw();
+}
+cv.addEventListener('touchstart',onStart,{passive:false});
+cv.addEventListener('touchmove',onMove,{passive:false});
+cv.addEventListener('touchend',onEnd,{passive:false});
+cv.addEventListener('mousedown',onStart);
+cv.addEventListener('mousemove',onMove);
+cv.addEventListener('mouseup',onEnd);
+document.getElementById('ob').addEventListener('click',function(){
+  initBalls();alive=true;
+  document.getElementById('ov').style.display='none';
+  SFX.ok();clearInterval(loop);loop=setInterval(step,16);
+});
+document.getElementById('newg').addEventListener('click',function(){
+  clearInterval(loop);initBalls();alive=true;
+  document.getElementById('ov').style.display='none';
+  SFX.ok();loop=setInterval(step,16);
+});
+document.getElementById('reset').addEventListener('click',function(){
+  clearInterval(loop);initBalls();alive=false;
+  document.getElementById('ov').style.display='grid';
+  document.querySelector('.ov h2').textContent='Billiard 8-Ball';
+  document.querySelector('.ov p').textContent='Drag dari bola putih ke arah berlawanan, lalu lepas untuk memukul';
+  document.getElementById('ob').textContent='▶ Mulai';
+  draw();SFX.tap();
+});
+document.getElementById('help').addEventListener('click',function(){
+  alert('Cara Main:\n\n1. Tekan & tahan di dekat bola putih\n2. Drag ke arah berlawanan\n3. Lepas untuk memukul\n4. Masukkan semua 15 bola ke lubang\n5. Bola putih tidak dihitung');
+  SFX.tap();
+});
+var loop=null;
+size();initBalls();draw();
+window.addEventListener('resize',function(){size();initBalls();draw()});
+})();
+</script></body></html>

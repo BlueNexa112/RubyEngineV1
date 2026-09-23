@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MTK Question · ToolKit</title>
+<style>
+:root{--bg:#1a1a0d;--card:#2a2a14;--fg:#f5f5d0;--mut:#a8a87a;--acc:#fde047;--acc2:#fb7185;--line:rgba(253,224,71,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Courier New',monospace;background:radial-gradient(140% 80% at 50% 0%,#3d3d1a,#1a1a0d 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-family:system-ui,sans-serif}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;font-family:system-ui,sans-serif}
+.hud div{padding:11px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:center}
+.hud span{font-size:10px;color:var(--mut);letter-spacing:1px}
+.hud b{display:block;color:var(--acc);font-size:17px;font-weight:800;margin-top:3px}
+.qbox{padding:36px 16px;border-radius:20px;text-align:center;background:var(--card);border:2px solid var(--line);margin-bottom:14px;position:relative}
+.qbox::before{content:'';position:absolute;top:12px;left:20px;right:20px;height:1px;background:repeating-linear-gradient(90deg,transparent 0 6px,rgba(253,224,71,.15) 6px 8px)}
+.qbox .q{font-size:40px;font-weight:800;color:var(--acc);margin-top:14px;letter-spacing:1px;word-break:break-word}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{padding:22px;border-radius:16px;background:var(--card);border:2px solid var(--line);font-size:22px;font-weight:700;text-align:center;color:var(--fg);font-family:inherit;transition:.15s;cursor:pointer}
+.opt:active{transform:scale(.97)}
+.opt.ok{background:rgba(74,222,128,.18);border-color:#4ade80;color:#4ade80}
+.opt.no{background:rgba(251,113,133,.15);border-color:var(--acc2);color:var(--acc2)}
+.tb{height:6px;border-radius:3px;background:rgba(253,224,71,.1);overflow:hidden;margin-top:14px;border:1px solid var(--line)}
+.tb span{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:100%;transition:width .95s linear}
+.end{display:none;text-align:center;padding:24px;background:var(--card);border-radius:20px;border:1px solid var(--line)}
+.end h2{font-size:24px;color:var(--acc);margin-bottom:8px}
+.end p{color:var(--mut);font-size:14px;margin-bottom:16px}
+.end button{padding:14px 28px;border-radius:14px;background:linear-gradient(135deg,var(--acc),#eab308);color:#1a1a0d;font-size:15px;font-weight:800;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(253,224,71,.35)}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>MTK Question</h1></div>
+<div class="hud">
+<div><span>SOAL</span><b id="n">0</b></div>
+<div><span>SKOR</span><b id="sc">0</b></div>
+<div><span>NYAWA</span><b id="lv">3</b></div>
+</div>
+<div id="main">
+<div class="qbox"><div class="q" id="q">—</div></div>
+<div class="opts" id="op"></div>
+<div class="tb"><span id="tbs"></span></div>
+</div>
+<div class="end" id="end">
+<h2>Selesai!</h2>
+<p id="endp"></p>
+<button id="rst">⟲ Main Lagi</button>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var score,lives,n,answer,timer,timeLeft,lock;
+function newQ(){
+  lock=false;n++;
+  var t=Math.floor(Math.random()*4),a,b,op;
+  if(t===0){a=Math.floor(Math.random()*50)+5;b=Math.floor(Math.random()*50)+5;op='+';answer=a+b}
+  else if(t===1){a=Math.floor(Math.random()*50)+20;b=Math.floor(Math.random()*a);op='−';answer=a-b}
+  else if(t===2){a=Math.floor(Math.random()*12)+2;b=Math.floor(Math.random()*12)+2;op='×';answer=a*b}
+  else{b=Math.floor(Math.random()*11)+2;answer=Math.floor(Math.random()*11)+2;a=b*answer;op='÷'}
+  document.getElementById('q').textContent=a+' '+op+' '+b+' = ?';
+  document.getElementById('n').textContent=n;
+  var opts=[answer];
+  while(opts.length<4){
+    var d=answer+Math.floor(Math.random()*11)-5;
+    if(d!==answer&&d>0&&opts.indexOf(d)===-1)opts.push(d);
+  }
+  opts=opts.sort(function(){return Math.random()-.5});
+  var box=document.getElementById('op');box.innerHTML='';
+  opts.forEach(function(v){
+    var b=document.createElement('button');b.className='opt';b.textContent=v;
+    b.addEventListener('click',function(){pick(v,b)});box.appendChild(b);
+  });
+  clearInterval(timer);
+  timeLeft=100;document.getElementById('tbs').style.width='100%';
+  timer=setInterval(function(){
+    timeLeft-=6.25;
+    if(timeLeft<=0){clearInterval(timer);if(!lock){lock=true;wrong()}}
+    else document.getElementById('tbs').style.width=timeLeft+'%';
+  },1000);
+}
+function pick(v,btn){
+  if(lock)return;lock=true;clearInterval(timer);
+  if(v===answer){
+    btn.classList.add('ok');score+=10;document.getElementById('sc').textContent=score;
+    SFX.ok();if(navigator.vibrate)navigator.vibrate(20);
+    setTimeout(newQ,500);
+  } else {
+    btn.classList.add('no');
+    Array.prototype.forEach.call(document.getElementById('op').children,function(c){if(+c.textContent===answer)c.classList.add('ok')});
+    wrong();
+  }
+}
+function wrong(){
+  lives--;document.getElementById('lv').textContent=lives;
+  SFX.err();if(navigator.vibrate)navigator.vibrate([80,50,80]);
+  if(lives<=0){end();return}
+  setTimeout(newQ,900);
+}
+function end(){
+  clearInterval(timer);
+  document.getElementById('main').style.display='none';
+  document.getElementById('end').style.display='block';
+  document.getElementById('endp').textContent='Total soal: '+n+' • Skor: '+score;
+  SFX.lose();
+}
+function start(){
+  score=0;lives=3;n=0;
+  document.getElementById('sc').textContent=0;
+  document.getElementById('lv').textContent=3;
+  document.getElementById('main').style.display='';
+  document.getElementById('end').style.display='none';
+  newQ();
+}
+document.getElementById('rst').addEventListener('click',start);
+start();
+})();
+</script></body></html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Bubble Shooter · ToolKit</title>
+<style>
+:root{--bg:#0a0a20;--card:#18184a;--fg:#e8e8ff;--mut:#7878b8;--acc:#22d3ee;--acc2:#f472b6;--line:rgba(34,211,238,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#1a1a4a,#0a0a20 65%);color:var(--fg);min-height:100dvh;padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700;flex:1}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.hud div{padding:9px;border-radius:10px;background:var(--card);border:1px solid var(--line);text-align:center}
+.hud .l{font-size:9px;color:var(--mut);letter-spacing:1px}
+.hud b{display:block;font-size:15px;font-weight:800;color:var(--acc);margin-top:2px}
+.wrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#05051a;touch-action:none}
+canvas{display:block;width:100%;aspect-ratio:3/4;touch-action:none}
+.ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,10,32,.92);backdrop-filter:blur(8px);text-align:center;padding:20px;z-index:5}
+.ov h2{font-size:22px;margin-bottom:8px;color:var(--acc2)}
+.ov p{color:var(--mut);font-size:13px;margin-bottom:16px;line-height:1.5}
+.btn{padding:14px 28px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a0a20;font-size:15px;font-weight:800;border:none;font-family:inherit}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Bubble Shooter</h1></div>
+<div class="hud">
+<div><div class="l">SKOR</div><b id="sc">0</b></div>
+<div><div class="l">LEVEL</div><b id="lv">1</b></div>
+<div><div class="l">HIGH</div><b id="hi">0</b></div>
+</div>
+<div class="wrap">
+<canvas id="cv"></canvas>
+<div class="ov" id="ov"><div>
+<h2 id="ot">Bubble Shooter</h2>
+<p id="op">Aim & tap untuk menembak. Match 3+ warna sama!</p>
+<button class="btn" id="ob">▶ Mulai</button>
+</div></div>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var W,H,COLS,BUB_R;
+var grid=[],shotBubble=null;
+var colors=['#ef4444','#fbbf24','#22c55e','#3b82f6','#a855f7'];
+var current,next,score=0,level=1,alive=false;
+var hi=+(localStorage.getItem('bubble_hi')||0);
+var aimAngle=-Math.PI/2;
+var particles=[],loop;
+
+function size(){
+  var r=cv.getBoundingClientRect();
+  cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  W=r.width;H=r.height;
+  COLS=10;BUB_R=W/(COLS*2);
+}
+function rowCols(r){return r%2===0?COLS:COLS-1}
+function bubblePos(r,c){
+  var off=(r%2===0)?0:BUB_R;
+  return {x:BUB_R+c*BUB_R*2+off,y:BUB_R+r*BUB_R*Math.sqrt(3)};
+}
+function initLevel(){
+  grid=[];
+  var rows=5+level;
+  for(var r=0;r<rows;r++){
+    grid[r]=[];
+    var cnt=rowCols(r);
+    for(var c=0;c<cnt;c++)grid[r][c]=Math.floor(Math.random()*colors.length);
+  }
+  shotBubble=null;particles=[];dragging=false;
+  current=Math.floor(Math.random()*colors.length);
+  next=Math.floor(Math.random()*colors.length);
+  updateHud();
+}
+function updateHud(){
+  document.getElementById('sc').textContent=score;
+  document.getElementById('lv').textContent=level;
+  document.getElementById('hi').textContent=hi;
+}
+function drawBubble(x,y,color,r){
+  var g=ctx.createRadialGradient(x-r*0.3,y-r*0.3,r*0.2,x,y,r);
+  g.addColorStop(0,'#fff');g.addColorStop(0.25,color);g.addColorStop(1,color);
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.arc(x,y,r-1,0,7);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;ctx.stroke();
+}
+function draw(){
+  ctx.fillStyle='#05051a';ctx.fillRect(0,0,W,H);
+  // grid
+  for(var r=0;r<grid.length;r++){
+    if(!grid[r])continue;
+    for(var c=0;c<grid[r].length;c++){
+      if(grid[r][c]===undefined||grid[r][c]===null)continue;
+      var p=bubblePos(r,c);
+      drawBubble(p.x,p.y,colors[grid[r][c]],BUB_R);
+    }
+  }
+  // aim line
+  if(alive&&!shotBubble){
+    var sx=W/2,sy=H-40;
+    var len=Math.min(220,H*0.35);
+    var ax=sx+Math.cos(aimAngle)*len;
+    var ay=sy+Math.sin(aimAngle)*len;
+    ctx.strokeStyle='rgba(34,211,238,.55)';ctx.lineWidth=2;ctx.setLineDash([8,6]);
+    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ax,ay);ctx.stroke();ctx.setLineDash([]);
+  }
+  // current ball
+  if(!shotBubble){
+    drawBubble(W/2,H-40,colors[current],BUB_R);
+    var nx=W-BUB_R*2,ny=H-30;
+    drawBubble(nx,ny,colors[next],BUB_R*0.7);
+    ctx.fillStyle='rgba(255,255,255,.6)';
+    ctx.font='10px system-ui';ctx.textAlign='center';
+    ctx.fillText('NEXT',nx,ny+BUB_R*0.7+12);
+  }
+  // shot bubble
+  if(shotBubble){
+    ctx.shadowColor=colors[shotBubble.color];ctx.shadowBlur=16;
+    drawBubble(shotBubble.x,shotBubble.y,colors[shotBubble.color],BUB_R);
+    ctx.shadowBlur=0;
+  }
+  // particles
+  particles.forEach(function(p){
+    ctx.globalAlpha=p.life;ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
+function pickNearest(x,y){
+  var bestR=-1,bestC=-1,bestD=Infinity;
+  var maxRows=Math.min(grid.length+2,14);
+  for(var r=0;r<maxRows;r++){
+    var cnt=rowCols(r);
+    for(var c=0;c<cnt;c++){
+      if(grid[r]&&grid[r][c]!==undefined&&grid[r][c]!==null)continue;
+      var p=bubblePos(r,c);
+      if(p.y>H-90)continue;
+      var d=Math.hypot(p.x-x,p.y-y);
+      if(d<BUB_R*1.5&&d<bestD){bestD=d;bestR=r;bestC=c}
+    }
+  }
+  return {r:bestR,c:bestC};
+}
+function neighbors(r,c){
+  var even=(r%2===0);
+  var dirs=even?[[-1,-1],[-1,0],[0,-1],[0,1],[1,-1],[1,0]]
+                :[[-1,0],[-1,1],[0,-1],[0,1],[1,0],[1,1]];
+  var res=[];
+  dirs.forEach(function(d){
+    var nr=r+d[0],nc=c+d[1];
+    if(nr>=0&&grid[nr]&&nc>=0&&nc<grid[nr].length)res.push([nr,nc]);
+  });
+  return res;
+}
+function matchGroup(r,c,color,visited){
+  if(!grid[r]||c<0||c>=grid[r].length)return [];
+  if(grid[r][c]===undefined||grid[r][c]===null||grid[r][c]!==color)return [];
+  var key=r+','+c;
+  if(visited[key])return [];
+  visited[key]=true;
+  var group=[[r,c]];
+  neighbors(r,c).forEach(function(n){group=group.concat(matchGroup(n[0],n[1],color,visited))});
+  return group;
+}
+function removeFloating(){
+  var visited={},stack=[];
+  if(grid[0])for(var c=0;c<grid[0].length;c++){
+    if(grid[0][c]!==undefined&&grid[0][c]!==null){stack.push([0,c]);visited['0,'+c]=true}
+  }
+  while(stack.length){
+    var n=stack.pop();
+    neighbors(n[0],n[1]).forEach(function(nb){
+      var k=nb[0]+','+nb[1];
+      if(grid[nb[0]]&&grid[nb[0]][nb[1]]!==undefined&&grid[nb[0]][nb[1]]!==null&&!visited[k]){
+        visited[k]=true;stack.push(nb);
+      }
+    });
+  }
+  var rm=0;
+  for(var r=0;r<grid.length;r++){
+    if(!grid[r])continue;
+    for(var c=0;c<grid[r].length;c++){
+      if(grid[r][c]!==undefined&&grid[r][c]!==null&&!visited[r+','+c]){
+        addParticles(bubblePos(r,c),colors[grid[r][c]]);
+        grid[r][c]=null;rm++;
+      }
+    }
+  }
+  return rm;
+}
+function addParticles(pos,color){
+  for(var i=0;i<8;i++){
+    var a=Math.random()*Math.PI*2,sp=1+Math.random()*3;
+    particles.push({x:pos.x,y:pos.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,color:color,r:BUB_R*0.28});
+  }
+}
+function placeBubble(sh){
+  var slot=pickNearest(sh.x,sh.y);
+  if(slot.r<0){return false}
+  if(!grid[slot.r])grid[slot.r]=[];
+  grid[slot.r][slot.c]=sh.color;
+
+  var visited={};
+  var group=matchGroup(slot.r,slot.c,sh.color,visited);
+  if(group.length>=3){
+    group.forEach(function(g){
+      if(grid[g[0]][g[1]]!==null){
+        addParticles(bubblePos(g[0],g[1]),colors[grid[g[0]][g[1]]]);
+        grid[g[0]][g[1]]=null;
+      }
+    });
+    score+=group.length*10;
+    SFX.pickup();if(navigator.vibrate)navigator.vibrate([20,30,20]);
+    score+=removeFloating()*20;
+    updateHud();
+  } else SFX.tap();
+
+  current=next;next=Math.floor(Math.random()*colors.length);
+
+  // Cek apakah level selesai
+  var remain=0;
+  for(var r=0;r<grid.length;r++){
+    if(!grid[r])continue;
+    for(var c=0;c<grid[r].length;c++){
+      if(grid[r][c]!==undefined&&grid[r][c]!==null)remain++;
+    }
+  }
+  if(remain===0){
+    level++;SFX.win();
+    if(score>hi){hi=score;localStorage.setItem('bubble_hi',hi)}
+    updateHud();
+    alive=false;
+    setTimeout(function(){
+      document.getElementById('ot').textContent='🎉 Level Selesai!';
+      document.getElementById('op').textContent='Skor: '+score+' • Lanjut ke level '+(level+1);
+      document.getElementById('ob').textContent='▶ Lanjut';
+      document.getElementById('ov').style.display='grid';
+    },500);
+  }
+  return true;
+}
+function step(){
+  if(!alive){draw();return}
+
+  if(shotBubble){
+    shotBubble.x+=shotBubble.vx;
+    shotBubble.y+=shotBubble.vy;
+
+    // Wall bounce
+    if(shotBubble.x-BUB_R<0){
+      shotBubble.x=BUB_R;shotBubble.vx*=-1;SFX.tap();
+    }
+    if(shotBubble.x+BUB_R>W){
+      shotBubble.x=W-BUB_R;shotBubble.vx*=-1;SFX.tap();
+    }
+
+    // Cek collision dengan ceiling atau bubble
+    var collided=false;
+    if(shotBubble.y-BUB_R<0){
+      collided=true;
+    } else {
+      for(var r=0;r<grid.length&&!collided;r++){
+        if(!grid[r])continue;
+        for(var c=0;c<grid[r].length&&!collided;c++){
+          if(grid[r][c]===undefined||grid[r][c]===null)continue;
+          var p=bubblePos(r,c);
+          if(Math.hypot(p.x-shotBubble.x,p.y-shotBubble.y)<BUB_R*1.85){
+            collided=true;
+          }
+        }
+      }
+    }
+
+    if(collided){
+      // FIX: simpan referensi dulu, set null setelah place
+      var sb=shotBubble;
+      shotBubble=null;
+      placeBubble(sb);
+    }
+  }
+
+  particles.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vx*=0.96;p.vy*=0.96;p.life-=0.03});
+  particles=particles.filter(function(p){return p.life>0});
+
+  draw();
+}
+function start(){
+  if(!alive&&level>1){/* lanjut level, grid sudah kosong */}
+  else if(!grid.length||!alive){initLevel()}
+  else initLevel();
+  alive=true;
+  document.getElementById('ov').style.display='none';
+  SFX.ok();
+  clearInterval(loop);loop=setInterval(step,16);
+}
+document.getElementById('ob').addEventListener('click',function(){
+  if(!alive)initLevel();
+  alive=true;
+  document.getElementById('ov').style.display='none';
+  SFX.ok();
+  clearInterval(loop);loop=setInterval(step,16);
+});
+function aim(x,y){
+  var sx=W/2,sy=H-40;
+  aimAngle=Math.atan2(y-sy,x-sx);
+  // Batasi agar tidak menembak ke bawah
+  var min=-Math.PI*0.92,max=-Math.PI*0.08;
+  if(aimAngle>0)aimAngle=aimAngle>Math.PI/2?min:max;
+  aimAngle=Math.max(min,Math.min(max,aimAngle));
+  draw();
+}
+function shoot(){
+  if(shotBubble||!alive)return;
+  var sx=W/2,sy=H-40,sp=11;
+  shotBubble={x:sx,y:sy,vx:Math.cos(aimAngle)*sp,vy:Math.sin(aimAngle)*sp,color:current};
+  SFX.shoot();
+}
+cv.addEventListener('touchstart',function(e){
+  e.preventDefault();
+  var r=cv.getBoundingClientRect();
+  aim(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);
+},{passive:false});
+cv.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  var r=cv.getBoundingClientRect();
+  aim(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top);
+},{passive:false});
+cv.addEventListener('touchend',function(e){
+  e.preventDefault();shoot();
+},{passive:false});
+cv.addEventListener('mousemove',function(e){
+  if(!alive||shotBubble)return;
+  var r=cv.getBoundingClientRect();
+  aim(e.clientX-r.left,e.clientY-r.top);
+});
+cv.addEventListener('click',function(){shoot()});
+
+size();initLevel();alive=false;draw();
+window.addEventListener('resize',function(){size();draw()});
+})();
+</script></body></html>

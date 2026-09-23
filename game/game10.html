@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Coin Clicker · ToolKit</title>
+<style>
+:root{--bg:#1a1408;--card:#2a2008;--fg:#fff7e0;--mut:#a8956e;--acc:#ffd700;--acc2:#ff9500;--line:rgba(255,215,0,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#3d2a08,#1a1408 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.stats{text-align:center;padding:22px 16px;border-radius:22px;background:linear-gradient(180deg,rgba(255,215,0,.08),rgba(255,149,0,.03));border:1px solid var(--line);margin-bottom:14px}
+.stats .lbl{font-size:11px;color:var(--mut);letter-spacing:2px}
+.stats .val{font-size:42px;font-weight:900;margin-top:8px;color:var(--acc);text-shadow:0 0 24px rgba(255,215,0,.5);font-variant-numeric:tabular-nums;line-height:1}
+.stats .ps{font-size:12px;color:var(--mut);margin-top:6px}
+.coin-wrap{display:grid;place-items:center;padding:12px 0;position:relative}
+.coin{width:190px;height:190px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fff3b0,#ffd700 42%,#c9a800 100%);box-shadow:0 0 50px rgba(255,215,0,.45),inset 0 -14px 24px rgba(120,80,0,.4),inset 0 8px 16px rgba(255,255,255,.5);display:grid;place-items:center;font-size:88px;user-select:none;transition:transform .08s;border:5px solid rgba(255,255,255,.28);position:relative;cursor:pointer}
+.coin:active{transform:scale(.92)}
+.coin::after{content:'';position:absolute;inset:16px;border-radius:50%;border:2px dashed rgba(120,80,0,.35)}
+.pop{position:absolute;font-size:22px;font-weight:800;color:var(--acc);pointer-events:none;animation:fly .9s ease forwards;text-shadow:0 0 12px rgba(255,215,0,.6)}
+@keyframes fly{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-80px)}}
+.upg{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:8px}
+.upg .info{flex:1;min-width:0}
+.upg .n{font-size:14px;font-weight:700}
+.upg .d{font-size:11.5px;color:var(--mut);margin-top:2px}
+.upg .b{padding:10px 14px;border-radius:12px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a1408;font-weight:800;font-size:13px;border:none;font-family:inherit;white-space:nowrap}
+.upg .b:active{transform:scale(.96)}
+.upg .b:disabled{opacity:.3;filter:grayscale(1)}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Coin Clicker</h1></div>
+<div class="stats">
+<div class="lbl">KOIN</div>
+<div class="val" id="coins">0</div>
+<div class="ps" id="ps">+1 / tap</div>
+</div>
+<div class="coin-wrap"><div class="coin" id="coin">🪙</div></div>
+<div id="upg" style="margin-top:14px"></div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var coins=0,perClick=1,perSec=0;
+var U=[
+  {id:'c1',n:'Klik Kuat',d:'+1 per tap',b:25,s:1.7,t:'click',a:1},
+  {id:'c2',n:'Sarung Tangan',d:'+5 per tap',b:150,s:1.75,t:'click',a:5},
+  {id:'c3',n:'Sarung Emas',d:'+25 per tap',b:1200,s:1.8,t:'click',a:25},
+  {id:'a1',n:'Mesin Koin',d:'+1 koin / detik',b:100,s:1.75,t:'auto',a:1},
+  {id:'a2',n:'Pabrik Koin',d:'+5 koin / detik',b:600,s:1.8,t:'auto',a:5},
+  {id:'a3',n:'Bank Koin',d:'+25 koin / detik',b:3000,s:1.9,t:'auto',a:25},
+  {id:'a4',n:'Kota Koin',d:'+150 koin / detik',b:15000,s:2,t:'auto',a:150}
+];
+var own={};
+function cost(u){return Math.floor(u.b*Math.pow(u.s,own[u.id]||0))}
+function fmt(n){if(n<1000)return Math.floor(n);if(n<1e6)return (n/1000).toFixed(2)+'K';if(n<1e9)return (n/1e6).toFixed(2)+'M';if(n<1e12)return (n/1e9).toFixed(2)+'B';return (n/1e12).toFixed(2)+'T'}
+function render(){
+  document.getElementById('coins').textContent=fmt(coins);
+  document.getElementById('ps').textContent='+'+perClick+' / tap  •  +'+fmt(perSec)+' / dtk';
+  var box=document.getElementById('upg');box.innerHTML='';
+  U.forEach(function(u){
+    var c=cost(u);
+    var el=document.createElement('div');el.className='upg';
+    el.innerHTML='<div class="info"><div class="n">'+u.n+' <span style="color:var(--mut);font-weight:400">Lv '+(own[u.id]||0)+'</span></div><div class="d">'+u.d+'</div></div><button class="b">'+fmt(c)+'</button>';
+    var btn=el.querySelector('button');
+    if(coins<c)btn.disabled=true;
+    btn.addEventListener('click',function(){
+      var cc=cost(u);if(coins<cc)return;
+      coins-=cc;own[u.id]=(own[u.id]||0)+1;
+      if(u.t==='click')perClick+=u.a;else perSec+=u.a;
+      SFX.coin();if(navigator.vibrate)navigator.vibrate(15);
+      render();save();
+    });
+    box.appendChild(el);
+  });
+}
+function save(){try{localStorage.setItem('coin2',JSON.stringify({coins:coins,pc:perClick,ps:perSec,own:own}))}catch(e){}}
+var saved=localStorage.getItem('coin2');
+if(saved){try{var s=JSON.parse(saved);coins=s.coins||0;perClick=s.pc||1;perSec=s.ps||0;own=s.own||{}}catch(e){}}
+var lastT=Date.now();
+setInterval(function(){
+  var now=Date.now();var dt=(now-lastT)/1000;lastT=now;
+  if(perSec>0){coins+=perSec*dt;render();save()}
+},250);
+document.getElementById('coin').addEventListener('click',function(e){
+  coins+=perClick;SFX.coin();
+  if(navigator.vibrate)navigator.vibrate(10);
+  var r=this.getBoundingClientRect(),wrap=this.parentElement;
+  var p=document.createElement('div');p.className='pop';p.textContent='+'+perClick;
+  p.style.left=(e.clientX-r.left-10)+'px';p.style.top=(e.clientY-r.top-30)+'px';
+  wrap.appendChild(p);setTimeout(function(){p.remove()},900);
+  render();
+});
+render();
+})();
+</script></body></html>

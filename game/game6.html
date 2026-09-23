@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Tic Tac Toe · ToolKit</title>
+<style>
+:root{--bg:#0f1e15;--card:#152a1e;--fg:#e0f5e5;--mut:#6e9078;--acc:#7dd3a7;--acc2:#f7dc6f;--line:rgba(125,211,167,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Courier New',monospace;background:radial-gradient(140% 80% at 50% 0%,#1a3524,#0f1e15 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-family:system-ui,sans-serif}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;font-family:system-ui,sans-serif}
+.hud div{padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:center}
+.hud span{font-size:10px;color:var(--mut);letter-spacing:1px}
+.hud b{display:block;color:var(--acc);font-size:18px;font-weight:800;margin-top:3px}
+.status{text-align:center;padding:14px;font-size:14px;font-weight:600;margin-bottom:14px;color:var(--fg);min-height:48px;font-family:system-ui,sans-serif;background:var(--card);border-radius:14px;border:1px solid var(--line);display:grid;place-items:center}
+.status b{color:var(--acc2)}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;aspect-ratio:1/1;max-width:340px;margin:0 auto 14px}
+.cell{border-radius:16px;border:2px dashed var(--line);background:rgba(255,255,255,.02);display:grid;place-items:center;font-size:56px;font-weight:800;transition:.15s;user-select:none;cursor:pointer}
+.cell:active{transform:scale(.95);border-color:var(--acc)}
+.cell.x{color:var(--acc);text-shadow:0 0 18px rgba(125,211,167,.6);border-style:solid;border-color:rgba(125,211,167,.35)}
+.cell.o{color:var(--acc2);text-shadow:0 0 18px rgba(247,220,111,.6);border-style:solid;border-color:rgba(247,220,111,.35)}
+.cell.win{background:linear-gradient(135deg,rgba(125,211,167,.25),rgba(247,220,111,.25));border-color:var(--acc2)}
+.rst{width:100%;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:14px;font-weight:600;font-family:inherit}
+</style></head><body>
+<div class="top"><a class="back" href="../game.html">←</a><h1>Tic Tac Toe</h1></div>
+<div class="hud">
+<div><span>KAMU</span><b id="sw">0</b></div>
+<div><span>SERI</span><b id="sd">0</b></div>
+<div><span>AI</span><b id="sl">0</b></div>
+</div>
+<div class="status" id="st">Giliranmu — tap kotak</div>
+<div class="board" id="bd"></div>
+<button class="rst" id="rst">⟲ Main Lagi</button>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var board,over,turn,wins=0,loses=0,draws=0;
+var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+var bd=document.getElementById('bd');
+function init(){
+  board=['','','','','','','','',''];over=false;turn='X';
+  bd.innerHTML='';
+  for(var i=0;i<9;i++){
+    var c=document.createElement('div');c.className='cell';c.dataset.i=i;
+    c.addEventListener('click',tap);bd.appendChild(c);
+  }
+  document.getElementById('st').innerHTML='Giliranmu — tap kotak';
+  document.getElementById('sw').textContent=wins;
+  document.getElementById('sl').textContent=loses;
+  document.getElementById('sd').textContent=draws;
+}
+function render(){
+  Array.prototype.forEach.call(bd.children,function(c,i){
+    c.textContent=board[i]==='X'?'✕':board[i]==='O'?'◯':'';
+    c.className='cell '+(board[i]==='X'?'x':board[i]==='O'?'o':'');
+  });
+}
+function winner(b){
+  for(var i=0;i<LINES.length;i++){
+    var l=LINES[i];
+    if(b[l[0]]&&b[l[0]]===b[l[1]]&&b[l[1]]===b[l[2]])return {p:b[l[0]],l:l};
+  }
+  if(b.indexOf('')===-1)return {p:'draw'};
+  return null;
+}
+function tap(e){
+  var i=+e.currentTarget.dataset.i;
+  if(over||board[i]||turn!=='X')return;
+  board[i]='X';turn='O';render();SFX.flip();
+  var w=winner(board);if(w)return finish(w);
+  document.getElementById('st').innerHTML='AI berpikir…';
+  setTimeout(aiMove,420);
+}
+function aiMove(){
+  if(over)return;
+  var i=best();board[i]='O';render();SFX.flip();
+  var w=winner(board);if(w)return finish(w);
+  turn='X';
+  document.getElementById('st').innerHTML='Giliranmu — tap kotak';
+}
+function best(){
+  for(var i=0;i<9;i++)if(!board[i]){board[i]='O';if(winner(board)){board[i]='';return i}board[i]=''}
+  for(var i=0;i<9;i++)if(!board[i]){board[i]='X';if(winner(board)){board[i]='';return i}board[i]=''}
+  if(!board[4])return 4;
+  var corners=[0,2,6,8].filter(function(i){return !board[i]});
+  if(corners.length)return corners[Math.floor(Math.random()*corners.length)];
+  var free=[];for(var i=0;i<9;i++)if(!board[i])free.push(i);
+  return free[Math.floor(Math.random()*free.length)];
+}
+function finish(w){
+  over=true;
+  if(w.p==='draw'){draws++;document.getElementById('st').innerHTML='<b>Seri!</b>';SFX.tap()}
+  else if(w.p==='X'){wins++;document.getElementById('st').innerHTML='<b>Kamu Menang! 🎉</b>';SFX.win();if(navigator.vibrate)navigator.vibrate([60,40,80])}
+  else{loses++;document.getElementById('st').innerHTML='<b>AI Menang 😅</b>';SFX.lose()}
+  if(w.l)w.l.forEach(function(i){bd.children[i].classList.add('win')});
+  document.getElementById('sw').textContent=wins;
+  document.getElementById('sl').textContent=loses;
+  document.getElementById('sd').textContent=draws;
+}
+document.getElementById('rst').addEventListener('click',init);
+init();
+})();
+</script></body></html>
