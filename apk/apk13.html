@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Judol Simulator · ToolKit</title>
+<style>
+:root{--bg:#1a0a0a;--card:#2a1414;--fg:#ffe8e8;--mut:#a87878;--acc:#ff3b30;--acc2:#ffd700;--line:rgba(255,59,48,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#3d0f0f,#1a0a0a 65%);color:var(--fg);min-height:100dvh;padding:14px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.bal{padding:18px;border-radius:20px;background:linear-gradient(180deg,rgba(255,215,0,.1),rgba(255,59,48,.05));border:1px solid var(--line);text-align:center;margin-bottom:12px}
+.bal .l{font-size:11px;color:var(--mut);letter-spacing:1.5px}
+.bal .v{font-size:36px;font-weight:900;color:var(--acc2);margin-top:4px;text-shadow:0 0 24px rgba(255,215,0,.5);font-variant-numeric:tabular-nums}
+.slot{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:16px;background:var(--card);border-radius:20px;border:2px solid var(--line);margin-bottom:12px}
+.reel{aspect-ratio:1/1.3;background:#0d0404;border-radius:14px;display:grid;place-items:center;font-size:52px;overflow:hidden;border:1px solid rgba(255,215,0,.15);position:relative}
+.reel .sym{position:absolute;transition:transform .05s}
+.reel.spin .sym{animation:sp .1s linear infinite}
+@keyframes sp{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+.bet{display:flex;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+.bet button{padding:8px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:13px;font-weight:700;font-family:inherit}
+.bet button.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a0a0a;border-color:transparent}
+.spin{width:100%;padding:20px;border-radius:18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a0a0a;font-size:18px;font-weight:900;border:none;font-family:inherit;box-shadow:0 8px 28px rgba(255,59,48,.4);margin-bottom:14px;letter-spacing:2px}
+.spin:active{transform:scale(.97)}.spin:disabled{opacity:.5}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.stats div{padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:center}
+.stats .l{font-size:10px;color:var(--mut);letter-spacing:1px}
+.stats b{display:block;color:var(--acc2);font-size:17px;font-weight:800;margin-top:3px}
+.hist{padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:12px;color:var(--mut);min-height:60px;max-height:130px;overflow-y:auto;margin-bottom:10px}
+.hist div{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.hist b{color:var(--acc2)}
+.tema{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px}
+.tema::-webkit-scrollbar{display:none}
+.tema button{flex-shrink:0;padding:7px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mut);font-size:12px;font-family:inherit}
+.tema button.on{border-color:var(--acc2);color:var(--acc2)}
+.note{text-align:center;font-size:10.5px;color:var(--mut);opacity:.7;line-height:1.5}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Judol Simulator</h1></div>
+<div class="bal"><div class="l">SALDO KOIN VIRTUAL</div><div class="v" id="bal">1000</div></div>
+<div class="tema" id="tema">
+<button class="on" data-t="classic">🎰 Klasik</button>
+<button data-t="fruit">🍒 Buah</button>
+<button data-t="gem">💎 Permata</button>
+<button data-t="lucky">🍀 Hoki</button>
+</div>
+<div class="slot">
+<div class="reel" id="r0"><span class="sym">❓</span></div>
+<div class="reel" id="r1"><span class="sym">❓</span></div>
+<div class="reel" id="r2"><span class="sym">❓</span></div>
+</div>
+<div class="bet" id="bet">
+<button data-b="10" class="on">10</button>
+<button data-b="50">50</button>
+<button data-b="100">100</button>
+<button data-b="500">500</button>
+</div>
+<button class="spin" id="spin">🎰 SPIN</button>
+<div class="stats">
+<div><div class="l">SPIN</div><b id="s1">0</b></div>
+<div><div class="l">MENANG</div><b id="s2">0</b></div>
+<div><div class="l">TERBESAR</div><b id="s3">0</b></div>
+</div>
+<div class="hist" id="hist"><div style="text-align:center">Belum ada spin</div></div>
+<div class="note">⚠️ Simulasi hiburan. Tidak ada uang asli, deposit, atau withdraw.</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var THEMES={
+  classic:['🍒','🍋','⭐','💎','7️⃣','🔔'],
+  fruit:['🍒','🍋','🍇','🍉','🍓','🍌'],
+  gem:['💎','💠','🔷','🔶','💠','💎'],
+  lucky:['🍀','🌈','🍄','⭐','💫','✨']
+};
+var RARITY={'🍒':1,'🍋':2,'🍇':2,'🍉':2,'🍓':3,'🍌':2,'⭐':4,'💎':6,'7️⃣':8,'🔔':3,'💠':6,'🔷':4,'🔶':4,'🍀':5,'🌈':8,'🍄':3,'💫':5,'✨':4};
+var MULT={'🍒':2,'🍋':3,'🍇':3,'🍉':3,'🍓':4,'🍌':3,'⭐':5,'💎':10,'7️⃣':15,'🔔':4,'💠':10,'🔷':6,'🔶':6,'🍀':8,'🌈':15,'🍄':4,'💫':8,'✨':6};
+var coins=1000,bet=10,theme='classic',spins=0,wins=0,biggest=0,hist=[];
+var reels=[document.getElementById('r0'),document.getElementById('r1'),document.getElementById('r2')];
+var symbols=THEMES.classic;
+function upd(){
+  document.getElementById('bal').textContent=coins.toLocaleString('id-ID');
+  document.getElementById('s1').textContent=spins;
+  document.getElementById('s2').textContent=wins;
+  document.getElementById('s3').textContent=biggest;
+}
+function pick(){
+  var pool=[];
+  symbols.forEach(function(s){for(var i=0;i<(10-RARITY[s]);i++)pool.push(s)});
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function showFinal(res){
+  reels.forEach(function(r,i){r.classList.remove('spin');r.querySelector('.sym').textContent=res[i]});
+}
+function spin(){
+  if(coins<bet){SFX.err();alert('Saldo kurang!');return}
+  coins-=bet;spins++;
+  document.getElementById('spin').disabled=true;
+  var res=[pick(),pick(),pick()];
+  reels.forEach(function(r){r.classList.add('spin')});
+  var tick=setInterval(function(){SFX.tap()},100);
+  setTimeout(function(){
+    clearInterval(tick);
+    showFinal(res);
+    var mult=0;
+    if(res[0]===res[1]&&res[1]===res[2])mult=MULT[res[0]]*3;
+    else if(res[0]===res[1]||res[1]===res[2]||res[0]===res[2])mult=1;
+    var win=bet*mult;
+    if(win>0){
+      coins+=win;wins++;
+      if(win>biggest)biggest=win;
+      SFX.win();if(navigator.vibrate)navigator.vibrate([60,40,100]);
+      hist.unshift('<b style="color:#4ade80">+'+win+'</b> '+res.join(' '));
+    } else {
+      SFX.lose();
+      hist.unshift('<span style="color:#ff6b6b">-'+bet+'</span> '+res.join(' '));
+    }
+    if(hist.length>10)hist.pop();
+    document.getElementById('hist').innerHTML=hist.map(function(h){return '<div>'+h+'</div>'}).join('');
+    upd();
+    document.getElementById('spin').disabled=false;
+  },1800);
+}
+document.getElementById('spin').addEventListener('click',spin);
+document.getElementById('bet').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#bet button').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');bet=parseInt(b.dataset.b);SFX.tap();
+});
+document.getElementById('tema').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#tema button').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');theme=b.dataset.t;symbols=THEMES[theme];
+  reels.forEach(function(r){r.querySelector('.sym').textContent=symbols[Math.floor(Math.random()*symbols.length)]});
+  SFX.ok();
+});
+if(localStorage.getItem('judol_daily')!==new Date().toDateString()){
+  coins+=100;localStorage.setItem('judol_daily',new Date().toDateString());
+}
+upd();
+})();
+</script></body></html>

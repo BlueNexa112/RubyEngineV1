@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Password · ToolKit</title>
+<style>
+:root{--bg:#030a06;--card:#0a1a10;--fg:#d4ffe0;--mut:#5b8a6e;--acc:#00ff9c;--line:rgba(0,255,156,.2)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#0a2015,#030a06 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.f{margin-bottom:14px}
+.f label{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:8px}
+.f label b{color:var(--acc);font-size:14px}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--card);border:1px solid var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px rgba(0,255,156,.5);cursor:pointer}
+.opt{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px}
+.opt:last-child{border:none}
+.tog{width:48px;height:28px;border-radius:14px;background:rgba(255,255,255,.06);position:relative;transition:.2s;border:1px solid var(--line)}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+.tog.on{background:var(--acc);border-color:transparent;box-shadow:0 0 16px rgba(0,255,156,.4)}
+.tog.on::after{left:22px;background:#030a06}
+.go{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--acc),#00c878);color:#030a06;font-size:15px;font-weight:800;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(0,255,156,.3);margin-top:14px}
+.go:active{transform:scale(.97)}
+.pwd{margin-top:14px;padding:18px;border-radius:16px;background:var(--card);border:1px solid var(--acc);font-family:'Courier New',monospace;font-size:16px;font-weight:700;word-break:break-all;text-align:center;color:var(--acc);min-height:64px;display:grid;place-items:center;box-shadow:inset 0 0 24px rgba(0,255,156,.08)}
+.cp{width:100%;padding:14px;margin-top:10px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:14px;font-weight:600;font-family:inherit}
+.cp:active{transform:scale(.97)}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Password Generator</h1></div>
+<div class="f"><label><span>Panjang</span><b id="lv">16</b></label><input id="ln" type="range" min="6" max="40" value="16"></div>
+<div class="opt"><span>Huruf besar (A-Z)</span><div class="tog on" data-o="U"></div></div>
+<div class="opt"><span>Huruf kecil (a-z)</span><div class="tog on" data-o="L"></div></div>
+<div class="opt"><span>Angka (0-9)</span><div class="tog on" data-o="N"></div></div>
+<div class="opt"><span>Simbol (!@#$)</span><div class="tog on" data-o="S"></div></div>
+<button class="go" id="gen">🔄 Generate</button>
+<div class="pwd" id="out">—</div>
+<button class="cp" id="cp">📋 Copy</button>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var o={U:1,L:1,N:1,S:1};
+document.querySelectorAll('.tog').forEach(function(t){
+  t.addEventListener('click',function(){var k=t.dataset.o;o[k]=o[k]?0:1;t.classList.toggle('on');SFX.tap()});
+});
+document.getElementById('ln').addEventListener('input',function(){document.getElementById('lv').textContent=this.value;SFX.scroll()});
+document.getElementById('gen').addEventListener('click',function(){
+  var L=parseInt(document.getElementById('ln').value);
+  var U='ABCDEFGHJKLMNPQRSTUVWXYZ',Lo='abcdefghijkmnopqrstuvwxyz',N='23456789',S='!@#$%^&*()-_=+';
+  var c='';if(o.U)c+=U;if(o.L)c+=Lo;if(o.N)c+=N;if(o.S)c+=S;
+  if(!c){document.getElementById('out').textContent='Pilih minimal 1 opsi';SFX.err();return}
+  var p='';for(var i=0;i<L;i++)p+=c[Math.floor(Math.random()*c.length)];
+  document.getElementById('out').textContent=p;SFX.ok();
+});
+document.getElementById('cp').addEventListener('click',function(){
+  var t=document.getElementById('out').textContent;if(!t||t==='—')return;
+  navigator.clipboard&&navigator.clipboard.writeText(t);
+  this.textContent='✓ Tersalin';SFX.pickup();
+  var s=this;setTimeout(function(){s.textContent='📋 Copy'},1300);
+});
+})();
+</script></body></html>

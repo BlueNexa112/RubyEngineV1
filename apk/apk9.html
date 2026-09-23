@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Timer · ToolKit</title>
+<style>
+:root{--bg:#0d0d0d;--card:#1a1a1a;--fg:#f5f5f5;--mut:#808080;--acc:#ff3b30;--acc2:#ff9500;--line:rgba(255,59,48,.25)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#1a1a1a,#0d0d0d 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.disp{text-align:center;padding:36px 16px;border-radius:24px;background:var(--card);border:1px solid var(--line);margin-bottom:16px;transition:.3s}
+.disp.done{border-color:var(--acc);box-shadow:0 0 40px rgba(255,59,48,.35);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.7}}
+.t{font-size:60px;font-weight:800;letter-spacing:2px;font-variant-numeric:tabular-nums;line-height:1}
+.t.hot{color:var(--acc)}
+.s{font-size:12px;color:var(--mut);letter-spacing:2px;margin-top:8px;font-weight:600}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.f label{display:block;font-size:11px;color:var(--mut);margin-bottom:6px;text-align:center;letter-spacing:.5px}
+.f input{width:100%;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:24px;font-weight:800;text-align:center;font-family:inherit;font-variant-numeric:tabular-nums}
+.f input:focus{outline:none;border-color:var(--acc)}
+.pre{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;scrollbar-width:none;padding-bottom:2px}
+.pre::-webkit-scrollbar{display:none}
+.pre button{flex-shrink:0;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--mut);font-size:13px;font-weight:600;font-family:inherit}
+.pre button:active{border-color:var(--acc);color:var(--acc)}
+.ctrls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.b{padding:18px;border-radius:16px;font-size:15px;font-weight:700;border:none;font-family:inherit;transition:transform .12s}
+.b:active{transform:scale(.97)}
+.start{background:linear-gradient(135deg,var(--acc),#c22b22);color:#fff;box-shadow:0 8px 24px rgba(255,59,48,.35)}
+.reset{background:var(--card);border:1px solid var(--line);color:var(--fg)}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Timer</h1></div>
+<div class="disp" id="dp"><div class="t" id="t">00:00</div><div class="s" id="s">SIAP</div></div>
+<div class="r2">
+<div class="f"><label>MENIT</label><input id="m" type="number" inputmode="numeric" value="1" min="0" max="99"></div>
+<div class="f"><label>DETIK</label><input id="d" type="number" inputmode="numeric" value="0" min="0" max="59"></div>
+</div>
+<div class="pre" id="pre">
+<button data-s="60">1 mnt</button><button data-s="180">3 mnt</button>
+<button data-s="300">5 mnt</button><button data-s="600">10 mnt</button>
+<button data-s="1800">30 mnt</button>
+</div>
+<div class="ctrls">
+<button class="b start" id="st">▶ Mulai</button>
+<button class="b reset" id="rs">⟲ Reset</button>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var total=60,remain=60,loop=null,run=false;
+var dp=document.getElementById('dp'),tE=document.getElementById('t'),sE=document.getElementById('s');
+function fmt(s){var m=Math.floor(s/60),x=s%60;return (m<10?'0':'')+m+':'+(x<10?'0':'')+x}
+function upd(){tE.textContent=fmt(remain);tE.classList.toggle('hot',remain<=10&&remain>0)}
+function setT(s){total=s;remain=s;upd();sE.textContent='SIAP';dp.classList.remove('done')}
+function tick(){
+  if(remain<=0){stop();sE.textContent='SELESAI';dp.classList.add('done');
+    SFX.win();
+    if(navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
+    return;
+  }
+  remain--;upd();
+  if(remain<=10&&remain>0) SFX.tick();
+}
+function start(){if(run)return;if(remain<=0)remain=total;run=true;sE.textContent='BERJALAN';loop=setInterval(tick,1000);SFX.tap()}
+function stop(){run=false;clearInterval(loop)}
+document.getElementById('st').addEventListener('click',function(){
+  if(run){stop();sE.textContent='DIJEDA';this.textContent='▶ Lanjut';SFX.tap()}
+  else{start();this.textContent='❚❚ Jeda'}
+});
+document.getElementById('rs').addEventListener('click',function(){
+  stop();remain=total;upd();sE.textContent='SIAP';dp.classList.remove('done');
+  document.getElementById('st').textContent='▶ Mulai';SFX.err();
+});
+document.getElementById('m').addEventListener('input',function(){
+  var m=parseInt(this.value)||0,d=parseInt(document.getElementById('d').value)||0;
+  if(!run)setT(m*60+d);
+});
+document.getElementById('d').addEventListener('input',function(){
+  var m=parseInt(document.getElementById('m').value)||0,d=parseInt(this.value)||0;
+  if(!run)setT(m*60+d);
+});
+document.getElementById('pre').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var s=parseInt(b.dataset.s);
+  document.getElementById('m').value=Math.floor(s/60);document.getElementById('d').value=s%60;
+  stop();setT(s);document.getElementById('st').textContent='▶ Mulai';SFX.ok();
+});
+upd();
+})();
+</script></body></html>

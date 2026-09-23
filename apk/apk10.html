@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Kalkulator BBM · ToolKit</title>
+<style>
+:root{--bg:#1a1408;--card:#2a2008;--fg:#fff7e0;--mut:#a8956e;--acc:#ffb800;--acc2:#ff7a00;--line:rgba(255,184,0,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#3d2f0a,#1a1408 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:12px;color:var(--mut);margin-bottom:6px}
+.f input{width:100%;padding:15px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:16px;font-weight:600;font-family:inherit}
+.f input:focus{outline:none;border-color:var(--acc)}
+.go{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a1408;font-size:15px;font-weight:800;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(255,184,0,.35)}
+.go:active{transform:scale(.97)}
+.res{margin-top:16px;padding:8px 20px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,184,0,.12);font-size:14px;color:var(--mut);align-items:center}
+.row:last-child{border:none;padding-top:18px}
+.row b{color:var(--fg);font-size:16px}
+.row.acc b{color:var(--acc);font-size:22px;font-weight:800}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Kalkulator BBM</h1></div>
+<div class="f"><label>Jarak tempuh (km)</label><input id="j" type="number" inputmode="decimal" placeholder="120"></div>
+<div class="f"><label>Konsumsi kendaraan (km/liter)</label><input id="k" type="number" inputmode="decimal" value="40"></div>
+<div class="f"><label>Harga BBM (Rp/liter)</label><input id="h" type="number" inputmode="decimal" value="10000"></div>
+<button class="go" id="go">⛽ Hitung</button>
+<div class="res">
+<div class="row"><span>Jarak</span><b id="r0">—</b></div>
+<div class="row"><span>Estimasi liter</span><b id="r1">—</b></div>
+<div class="row acc"><span>Estimasi biaya</span><b id="r2">—</b></div>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+document.getElementById('go').addEventListener('click',function(){
+  var j=parseFloat(document.getElementById('j').value)||0;
+  var k=parseFloat(document.getElementById('k').value)||0;
+  var h=parseFloat(document.getElementById('h').value)||0;
+  if(k<=0){alert('Konsumsi harus > 0');SFX.err();return}
+  var l=j/k,b=l*h;
+  document.getElementById('r0').textContent=j.toLocaleString('id-ID')+' km';
+  document.getElementById('r1').textContent=l.toFixed(2)+' L';
+  document.getElementById('r2').textContent='Rp '+Math.round(b).toLocaleString('id-ID');
+  SFX.coin();
+});
+</script></body></html>

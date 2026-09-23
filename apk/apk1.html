@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Kalkulator · ToolKit</title>
+<style>
+:root{--bg:#0b1220;--card:#131c30;--fg:#f0f4ff;--mut:#7a8aa5;--acc:#ff8a3d;--acc2:#ff5c8a;--line:rgba(255,138,61,.18);--btn:#1a2540}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:radial-gradient(120% 80% at 50% 0%,#1a2745,#0b1220 60%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px;transition:transform .12s}
+.back:active{transform:scale(.93)}
+h1{font-size:17px;font-weight:700;letter-spacing:-.2px}
+.disp{background:linear-gradient(180deg,var(--card),#0f1728);border:1px solid var(--line);border-radius:22px;padding:20px;margin-bottom:14px;text-align:right;min-height:130px;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:0 12px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.03)}
+.expr{font-size:15px;color:var(--mut);min-height:20px;word-break:break-all}
+.res{font-size:38px;font-weight:800;color:var(--acc);margin-top:8px;word-break:break-all;line-height:1;letter-spacing:-1px;text-shadow:0 0 24px rgba(255,138,61,.35)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.k{height:64px;border-radius:18px;background:var(--btn);border:1px solid var(--line);color:var(--fg);font-size:21px;font-weight:600;display:grid;place-items:center;font-family:inherit;transition:transform .1s,background .15s;user-select:none;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.k:active{transform:scale(.93);background:var(--acc);color:#0b1220}
+.k.op{color:var(--acc);background:rgba(255,138,61,.08)}
+.k.fn{color:var(--acc2)}
+.k.eq{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0b1220;border:none;font-weight:800;grid-column:span 1;box-shadow:0 8px 24px rgba(255,138,61,.35)}
+.k.eq:active{filter:brightness(1.1)}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Kalkulator</h1></div>
+<div class="disp"><div class="expr" id="e">0</div><div class="res" id="r">0</div></div>
+<div class="grid" id="g">
+<button class="k fn" data-k="C">C</button><button class="k op" data-k="(">(</button><button class="k op" data-k=")">)</button><button class="k op" data-k="/">÷</button>
+<button class="k" data-k="7">7</button><button class="k" data-k="8">8</button><button class="k" data-k="9">9</button><button class="k op" data-k="*">×</button>
+<button class="k" data-k="4">4</button><button class="k" data-k="5">5</button><button class="k" data-k="6">6</button><button class="k op" data-k="-">−</button>
+<button class="k" data-k="1">1</button><button class="k" data-k="2">2</button><button class="k" data-k="3">3</button><button class="k op" data-k="+">+</button>
+<button class="k fn" data-k="%">%</button><button class="k" data-k="0">0</button><button class="k" data-k=".">.</button><button class="k eq" data-k="=">=</button>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var expr='',eE=document.getElementById('e'),rE=document.getElementById('r');
+function upd(){eE.textContent=expr||'0'}
+function ev(s){if(!/^[0-9+\-*/().%\s]*$/.test(s))return null;s=s.replace(/(\d+(?:\.\d+)?)%/g,'($1/100)');try{var v=Function('return ('+s+')')();if(typeof v==='number'&&isFinite(v))return v}catch(x){}return null}
+document.getElementById('g').addEventListener('click',function(t){
+  var b=t.target.closest('.k');if(!b)return;var k=b.dataset.k;
+  if(k==='C'){expr='';eE.textContent='0';rE.textContent='0';SFX.err();return}
+  if(k==='='){var v=ev(expr);if(v!==null){var r=Math.round(v*1e10)/1e10;rE.textContent=r;expr=String(r);upd();SFX.ok()}else{rE.textContent='Error';SFX.err()}return}
+  SFX.tap();expr+=k;upd();
+  var p=ev(expr);if(p!==null)rE.textContent=String(Math.round(p*1e10)/1e10);
+});
+upd();
+})();
+</script></body></html>

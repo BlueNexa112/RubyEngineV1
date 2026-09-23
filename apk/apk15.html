@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Creator Studio · ToolKit</title>
+<style>
+:root{--bg:#0d0a1f;--card:#1a1438;--fg:#f0e8ff;--mut:#8a80b8;--acc:#a855f7;--acc2:#ec4899;--line:rgba(168,85,247,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#231550,#0d0a1f 65%);color:var(--fg);min-height:100dvh;padding:14px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding-bottom:4px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex-shrink:0;padding:9px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--mut);font-size:12.5px;font-family:inherit;font-weight:600}
+.tabs button.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0d0a1f;border-color:transparent;font-weight:800}
+.panel{display:none}.panel.on{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.f{margin-bottom:12px}
+.f label{display:block;font-size:12px;color:var(--mut);margin-bottom:6px}
+.f input,.f select,.f textarea{width:100%;padding:13px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:14px;font-family:inherit;font-weight:600}
+.go{width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0d0a1f;font-size:14px;font-weight:800;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(168,85,247,.3);margin-bottom:12px}
+.go:active{transform:scale(.97)}
+.cp{width:100%;padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:13px;font-weight:700;font-family:inherit;margin-bottom:12px}
+.res{padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:13.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:60px}
+.res:empty::before{content:'Hasil akan muncul di sini…';color:var(--mut)}
+.list{display:flex;flex-direction:column;gap:6px}
+.list .it{padding:11px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:13.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.list .it span{flex:1;word-break:break-word}
+.list .it button{padding:6px 10px;border-radius:8px;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.35);color:var(--acc);font-size:11px;font-weight:700;font-family:inherit}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Creator Studio</h1></div>
+<div class="tabs" id="tabs">
+<button class="on" data-t="idea">💡 Ide</button>
+<button data-t="hook">🪝 Hook</button>
+<button data-t="cap">📝 Caption</button>
+<button data-t="tag">#️⃣ Hashtag</button>
+<button data-t="plan">📅 Planner</button>
+<button data-t="stat">📊 Stats</button>
+<button data-t="script">📋 Script</button>
+</div>
+
+<div class="panel on" data-p="idea">
+<div class="f"><label>Niche / topik</label><input id="iNiche" placeholder="contoh: gaming, kuliner, edukasi"></div>
+<div class="f"><label>Format</label><select id="iFmt"><option value="video">Video panjang</option><option value="shorts">Shorts</option><option value="tiktok">TikTok</option></select></div>
+<button class="go" id="iGo">✨ Generate Ide</button>
+<div class="list" id="iOut"></div>
+</div>
+
+<div class="panel" data-p="hook">
+<div class="f"><label>Topik</label><input id="hTopic" placeholder="contoh: cara belajar cepat"></div>
+<div class="f"><label>Gaya hook</label><select id="hStyle"><option value="story">Storytelling</option><option value="edu">Edukasi</option><option value="viral">Viral</option></select></div>
+<button class="go" id="hGo">✨ Generate Hook</button>
+<div class="list" id="hOut"></div>
+</div>
+
+<div class="panel" data-p="cap">
+<div class="f"><label>Topik konten</label><input id="cTopic" placeholder="contoh: resep nasi goreng"></div>
+<div class="f"><label>Gaya</label><select id="cStyle"><option value="short">Pendek</option><option value="story">Storytelling</option><option value="moti">Motivasi</option></select></div>
+<button class="go" id="cGo">✨ Generate Caption</button>
+<button class="cp" id="cCp">📋 Copy</button>
+<div class="res" id="cOut"></div>
+</div>
+
+<div class="panel" data-p="tag">
+<div class="f"><label>Niche</label><input id="tNiche" placeholder="contoh: gaming, kuliner"></div>
+<div class="f"><label>Platform</label><select id="tPlat"><option value="ig">Instagram</option><option value="tt">TikTok</option><option value="yt">YouTube Shorts</option></select></div>
+<button class="go" id="tGo">✨ Generate Hashtag</button>
+<button class="cp" id="tCp">📋 Copy</button>
+<div class="res" id="tOut"></div>
+</div>
+
+<div class="panel" data-p="plan">
+<div class="f"><label>Judul konten</label><input id="pTitle" placeholder="contoh: Review gadget baru"></div>
+<div class="f"><label>Tanggal upload</label><input id="pDate" type="date"></div>
+<div class="f"><label>Status</label><select id="pStat"><option>Idea</option><option>Draft</option><option>Editing</option><option>Scheduled</option><option>Published</option></select></div>
+<button class="go" id="pGo">+ Tambah ke Planner</button>
+<div class="list" id="pOut"></div>
+</div>
+
+<div class="panel" data-p="stat">
+<div class="f"><label>Total video diupload</label><input id="sVid" type="number" value="0"></div>
+<div class="f"><label>Target video</label><input id="sTgt" type="number" value="30"></div>
+<div class="f"><label>Streak upload (hari)</label><input id="sStreak" type="number" value="0"></div>
+<button class="go" id="sGo">📊 Hitung</button>
+<div class="res" id="sOut"></div>
+</div>
+
+<div class="panel" data-p="script">
+<div class="f"><label>Topik video</label><input id="scTopic" placeholder="contoh: 5 tips produktif"></div>
+<button class="go" id="scGo">📋 Generate Script</button>
+<button class="cp" id="scCp">📋 Copy</button>
+<div class="res" id="scOut"></div>
+</div>
+
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+document.getElementById('tabs').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(function(x){x.classList.remove('on')});
+  b.classList.add('on');
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.toggle('on',p.dataset.p===b.dataset.t)});
+  SFX.tap();
+});
+function R(a){return a[Math.floor(Math.random()*a.length)]}
+function esc(s){return String(s||'').replace(/[<>]/g,'')}
+function copyBtn(btn,txt){
+  btn.addEventListener('click',function(){
+    navigator.clipboard&&navigator.clipboard.writeText(txt);
+    btn.textContent='✓';SFX.pickup();
+    setTimeout(function(){btn.textContent='Copy'},1200);
+  });
+}
+// Ideas
+var IDEA_T={
+  video:['5 Kesalahan Pemula di {n}','Panduan Lengkap {n} untuk Pemula','Review Jujur: {n} vs Kompetitor','Kisah Sukses dari Dunia {n}','Rahasia {n} yang Jarang Diketahui','10 Tips {n} yang Mengubah Hidupmu'],
+  shorts:['{n} dalam 30 detik!','POV: kamu baru tahu tentang {n}','3 fakta {n} yang bikin kaget','Before vs After {n}','{n} hack yang harus kamu coba'],
+  tiktok:['POV: kamu lagi {n}','Jangan skip! {n} ini penting','Trend {n} yang lagi viral','React ke {n} challenge','Cerita horor tentang {n}']
+};
+document.getElementById('iGo').addEventListener('click',function(){
+  var n=esc(document.getElementById('iNiche').value.trim())||'konten';
+  var f=document.getElementById('iFmt').value;
+  var out=document.getElementById('iOut');out.innerHTML='';
+  for(var i=0;i<8;i++){
+    var t=R(IDEA_T[f]).replace(/{n}/g,n);
+    var el=document.createElement('div');el.className='it';
+    el.innerHTML='<span></span><button>Copy</button>';
+    el.querySelector('span').textContent=t;
+    copyBtn(el.querySelector('button'),t);
+    out.appendChild(el);
+  }
+  SFX.win();
+});
+// Hooks
+var HOOK_T={
+  story:['Jujur, aku nggak nyangka ini kejadian sama aku…','3 tahun lalu aku gagal total. Sekarang?','Ada satu momen yang mengubah hidupku:','Aku hampir menyerah. Tapi…','Kamu pernah nggak sih ngerasa stuck banget?'],
+  edu:['Tahukah kamu bahwa {t} itu sebenarnya sederhana?','Stop! Sebelum kamu lakukan {t}, tonton ini dulu.','Ini cara cepat belajar {t} dalam 5 menit.','Rumus rahasia {t} yang tidak diajarkan di sekolah.','3 langkah mudah menguasai {t}.'],
+  viral:['Kamu nggak akan percaya apa yang terjadi dengan {t}…','POV: kamu baru tahu tentang {t}','Ini yang nggak ada yang kasih tahu soal {t}!','Jangan skip! {t} ini bakal ubah cara kamu lihat segalanya.','WARNING: {t} bisa bikin kamu ketagihan!']
+};
+document.getElementById('hGo').addEventListener('click',function(){
+  var t=esc(document.getElementById('hTopic').value.trim())||'topik ini';
+  var s=document.getElementById('hStyle').value;
+  var out=document.getElementById('hOut');out.innerHTML='';
+  for(var i=0;i<6;i++){
+    var txt=R(HOOK_T[s]).replace(/{t}/g,t);
+    var el=document.createElement('div');el.className='it';
+    el.innerHTML='<span></span><button>Copy</button>';
+    el.querySelector('span').textContent=txt;
+    copyBtn(el.querySelector('button'),txt);
+    out.appendChild(el);
+  }
+  SFX.win();
+});
+// Caption
+document.getElementById('cGo').addEventListener('click',function(){
+  var t=esc(document.getElementById('cTopic').value.trim())||'konten ini';
+  var s=document.getElementById('cStyle').value;
+  var out;
+  if(s==='short')out='✨ '+t+' ✨\n\nKalian wajib coba! 🔥\n\n#shorts #viral';
+  else if(s==='story')out='Awalnya aku ragu…\n\nTapi setelah coba '+t+', semuanya berubah.\n\nCeritanya begini: aku habis waktu berbulan-bulan buat ini. Setiap hari gagal. Sampai akhirnya, satu momen kecil mengubah semuanya.\n\nKalau kamu di posisi yang sama — jangan menyerah. 💪';
+  else out='🚀 '+t+'\n\nSetiap langkah kecil adalah progres.\nJangan bandingkan prosesmu dengan orang lain.\nFokus, konsisten, dan percaya diri.\n\nKamu lebih kuat dari yang kamu kira. 💪✨';
+  document.getElementById('cOut').textContent=out;SFX.ok();
+});
+document.getElementById('cCp').addEventListener('click',function(){
+  var t=document.getElementById('cOut').textContent;if(!t)return;
+  navigator.clipboard&&navigator.clipboard.writeText(t);
+  this.textContent='✓ Tersalin';SFX.pickup();
+  var s=this;setTimeout(function(){s.textContent='📋 Copy'},1300);
+});
+// Hashtag
+document.getElementById('tGo').addEventListener('click',function(){
+  var n=esc(document.getElementById('tNiche').value.trim()).toLowerCase().replace(/\s+/g,'')||'creator';
+  var p=document.getElementById('tPlat').value;
+  var base=['#'+n,'#'+n+'indonesia','#fyp','#viral','#trending','#shorts'];
+  if(p==='ig')base=base.concat(['#reels','#instagood','#explore','#reelsinstagram']);
+  if(p==='tt')base=base.concat(['#foryou','#foryoupage','#tiktokindonesia','#xyzbca']);
+  if(p==='yt')base=base.concat(['#youtubeshorts','#shortsindonesia','#youtubechannel']);
+  var extra=['#contentcreator','#kreator','#tips','#belajar','#daily','#vibes'];
+  while(base.length<20){var x=R(extra);if(base.indexOf(x)<0)base.push(x)}
+  document.getElementById('tOut').textContent=base.join(' ');SFX.ok();
+});
+document.getElementById('tCp').addEventListener('click',function(){
+  var t=document.getElementById('tOut').textContent;if(!t)return;
+  navigator.clipboard&&navigator.clipboard.writeText(t);
+  this.textContent='✓ Tersalin';SFX.pickup();
+  var s=this;setTimeout(function(){s.textContent='📋 Copy'},1300);
+});
+// Planner
+var planner=[];
+function renderPlanner(){
+  var box=document.getElementById('pOut');box.innerHTML='';
+  if(!planner.length){box.innerHTML='<div class="it" style="color:#8a80b8">Belum ada konten di planner</div>';return}
+  planner.forEach(function(p,i){
+    var el=document.createElement('div');el.className='it';
+    el.innerHTML='<span></span><button>✕</button>';
+    el.querySelector('span').innerHTML='<b>'+p.t+'</b><br><small style="color:#8a80b8">'+p.d+' • '+p.s+'</small>';
+    el.querySelector('button').addEventListener('click',function(){planner.splice(i,1);renderPlanner();SFX.tap()});
+    box.appendChild(el);
+  });
+}
+document.getElementById('pGo').addEventListener('click',function(){
+  var t=esc(document.getElementById('pTitle').value.trim());if(!t)return;
+  var d=document.getElementById('pDate').value||'-';
+  var s=document.getElementById('pStat').value;
+  planner.push({t:t,d:d,s:s});
+  document.getElementById('pTitle').value='';
+  renderPlanner();SFX.ok();
+});
+renderPlanner();
+// Stats
+document.getElementById('sGo').addEventListener('click',function(){
+  var v=parseInt(document.getElementById('sVid').value)||0;
+  var t=parseInt(document.getElementById('sTgt').value)||1;
+  var s=parseInt(document.getElementById('sStreak').value)||0;
+  var pct=Math.min(100,Math.round(v/t*100));
+  var bar='█'.repeat(Math.round(pct/5))+'░'.repeat(20-Math.round(pct/5));
+  var out='📊 CREATOR STATS\n\nVideo upload: '+v+'\nTarget: '+t+'\nProgress: '+pct+'%\n'+bar+'\n\n🔥 Streak: '+s+' hari\n💡 '+Math.max(0,t-v)+' video lagi untuk target\n';
+  out+=pct>=100?'🎉 Target tercapai!':'Semangat, konsisten ya! 💪';
+  document.getElementById('sOut').textContent=out;SFX.ok();
+});
+// Script
+document.getElementById('scGo').addEventListener('click',function(){
+  var t=esc(document.getElementById('scTopic').value.trim())||'topik ini';
+  var out='📋 SCRIPT: '+t+'\n\n';
+  out+='🪝 HOOK (0-5s):\n"Stop! Kalau kamu penasaran soal '+t+', tonton sampai habis."\n\n';
+  out+='🎬 INTRO (5-15s):\n"Halo semuanya! Di video kali ini aku bakal bahas '+t+' secara lengkap. Sebelum lanjut, jangan lupa like & subscribe."\n\n';
+  out+='📚 ISI:\n• Poin 1: Pengenalan '+t+'\n• Poin 2: Tips & trik\n• Poin 3: Kesalahan umum\n• Poin 4: Contoh penerapan\n\n';
+  out+='📣 CTA:\n"Kalau video ini bermanfaat, share ke teman kamu. Tulis di komentar pengalaman kamu!"\n\n';
+  out+='👋 OUTRO:\n"Sampai jumpa di video berikutnya. Bye!"';
+  document.getElementById('scOut').textContent=out;SFX.ok();
+});
+document.getElementById('scCp').addEventListener('click',function(){
+  var t=document.getElementById('scOut').textContent;if(!t)return;
+  navigator.clipboard&&navigator.clipboard.writeText(t);
+  this.textContent='✓ Tersalin';SFX.pickup();
+  var s=this;setTimeout(function(){s.textContent='📋 Copy'},1300);
+});
+})();
+</script></body></html>

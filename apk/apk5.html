@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Nama Produk · ToolKit</title>
+<style>
+:root{--bg:#1e0f08;--card:#2c1810;--fg:#fff2e6;--mut:#b18876;--acc:#ff7b3d;--acc2:#ffb56b;--line:rgba(255,123,61,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 70% at 50% 0%,#3a1a0c,#1e0f08 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:12px;color:var(--mut);margin-bottom:6px}
+.f input{width:100%;padding:15px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:16px;font-weight:600;font-family:inherit}
+.f input:focus{outline:none;border-color:var(--acc)}
+.go{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1e0f08;font-size:15px;font-weight:700;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(255,123,61,.35);margin-bottom:16px}
+.go:active{transform:scale(.97)}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:8px;animation:up .3s ease both}
+@keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.item span{font-size:14px;font-weight:600;flex:1;word-break:break-word}
+.cp{padding:9px 14px;border-radius:10px;background:rgba(255,123,61,.15);border:1px solid rgba(255,123,61,.35);color:var(--acc);font-size:12px;font-weight:700;font-family:inherit}
+.cp.ok{background:rgba(61,220,132,.15);color:#3ddc84;border-color:rgba(61,220,132,.4)}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Nama Produk</h1></div>
+<div class="f"><label>Kategori / kata kunci</label><input id="k" placeholder="skincare, kopi, sepatu…"></div>
+<button class="go" id="gen">✨ Generate 8 Nama</button>
+<div id="out"></div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var P=['Aero','Nova','Lux','Zea','Prime','Meta','Vibe','Zeal','Kira','Lyra','Eon','Sol'];
+var S=['Pro','Max','Lite','Plus','X','Ultra','Edge','Core','One','Elite','Neo','Wave'];
+function r(a){return a[Math.floor(Math.random()*a.length)]}
+function cap(s){return s.split(' ').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1)}).join(' ')}
+document.getElementById('gen').addEventListener('click',function(){
+  var k=document.getElementById('k').value.trim()||'produk';
+  var out=document.getElementById('out');out.innerHTML='';
+  var seen={};
+  for(var i=0;i<8;i++){
+    var n,t=0;
+    do{n=r(P)+' '+cap(k)+' '+r(S);t++}while(seen[n]&&t<30);
+    seen[n]=1;
+    var row=document.createElement('div');row.className='item';
+    row.innerHTML='<span></span><button class="cp">Copy</button>';
+    row.querySelector('span').textContent=n;
+    (function(txt,btn){
+      btn.addEventListener('click',function(){
+        navigator.clipboard&&navigator.clipboard.writeText(txt);
+        btn.textContent='✓';btn.classList.add('ok');SFX.pickup();
+        setTimeout(function(){btn.textContent='Copy';btn.classList.remove('ok')},1200);
+      });
+    })(n,row.querySelector('.cp'));
+    out.appendChild(row);
+  }
+  SFX.win();
+});
+})();
+</script></body></html>

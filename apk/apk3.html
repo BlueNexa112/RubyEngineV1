@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Diskon · ToolKit</title>
+<style>
+:root{--bg:#1a0a14;--card:#2a1220;--fg:#ffe8f0;--mut:#a5788a;--acc:#ff4b8b;--acc2:#ffb347;--line:rgba(255,75,139,.2)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#2a0f1e,#1a0a14 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:12px;color:var(--mut);margin-bottom:6px}
+.f input{width:100%;padding:15px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:16px;font-weight:600;font-family:inherit}
+.f input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(255,75,139,.15)}
+.go{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--acc),#d92f6f);color:#fff;font-size:15px;font-weight:700;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(255,75,139,.35)}
+.go:active{transform:scale(.97)}
+.res{margin-top:16px;padding:6px 18px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,75,139,.08),transparent)}
+.row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,75,139,.1);font-size:14px;color:var(--mut);align-items:center}
+.row:last-child{border:none;padding-bottom:16px;padding-top:16px}
+.row b{color:var(--fg);font-size:16px}
+.row.acc b{color:var(--acc2);font-size:22px;font-weight:800}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Kalkulator Diskon</h1></div>
+<div class="f"><label>Harga awal (Rp)</label><input id="h" type="number" inputmode="decimal" placeholder="100000"></div>
+<div class="f"><label>Diskon (%)</label><input id="d" type="number" inputmode="decimal" placeholder="20"></div>
+<button class="go" id="go">🏷️ Hitung Diskon</button>
+<div class="res">
+<div class="row"><span>Harga awal</span><b id="r0">—</b></div>
+<div class="row"><span>Potongan</span><b id="r1" style="color:#ff4b8b">—</b></div>
+<div class="row acc"><span>Harga akhir</span><b id="r2">—</b></div>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+document.getElementById('go').addEventListener('click',function(){
+  var h=parseFloat(document.getElementById('h').value)||0,d=parseFloat(document.getElementById('d').value)||0;
+  var pt=h*d/100,ak=h-pt;
+  document.getElementById('r0').textContent='Rp '+h.toLocaleString('id-ID');
+  document.getElementById('r1').textContent='- Rp '+pt.toLocaleString('id-ID');
+  document.getElementById('r2').textContent='Rp '+ak.toLocaleString('id-ID');
+  SFX.coin();
+});
+</script></body></html>

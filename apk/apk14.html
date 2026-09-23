@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MBG Calculator · ToolKit</title>
+<style>
+:root{--bg:#0a1a12;--card:#14301e;--fg:#e8f5ec;--mut:#78a88c;--acc:#22c55e;--acc2:#fbbf24;--line:rgba(34,197,94,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#153a24,#0a1a12 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.f{margin-bottom:12px}
+.f label{display:block;font-size:12px;color:var(--mut);margin-bottom:6px}
+.f input{width:100%;padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:15px;font-weight:600;font-family:inherit}
+.go{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a1a12;font-size:15px;font-weight:800;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(34,197,94,.3);margin-bottom:14px}
+.go:active{transform:scale(.97)}
+.res{padding:6px 18px;border-radius:18px;background:var(--card);border:1px solid var(--line);margin-bottom:12px}
+.row{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid rgba(34,197,94,.1);font-size:14px;color:var(--mut);align-items:center}
+.row:last-child{border:none}
+.row b{color:var(--fg)}
+.tot{padding:20px;border-radius:18px;background:linear-gradient(180deg,rgba(34,197,94,.12),rgba(251,191,36,.06));border:1px solid var(--line);text-align:center;margin-bottom:12px}
+.tot .l{font-size:11px;color:var(--mut);letter-spacing:1.5px}
+.tot .v{font-size:28px;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:6px;word-break:break-all}
+h3{font-size:12px;color:var(--mut);letter-spacing:1px;margin:14px 0 8px;text-transform:uppercase}
+.cat{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:6px;font-size:14px}
+.cat span{color:var(--mut)}
+.cat b{color:var(--acc2)}
+.scen{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.scen div{padding:12px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:center}
+.scen .l{font-size:10px;color:var(--mut);letter-spacing:1px}
+.scen b{display:block;color:var(--acc);font-size:13px;margin-top:4px;word-break:break-all}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>MBG Calculator</h1></div>
+<div class="f"><label>Jumlah penerima (siswa)</label><input id="n" type="number" inputmode="numeric" value="500"></div>
+<div class="f"><label>Jumlah hari</label><input id="d" type="number" inputmode="numeric" value="20"></div>
+<div class="f"><label>Biaya per porsi (Rp)</label><input id="c" type="number" inputmode="numeric" value="15000"></div>
+<button class="go" id="go">🍱 Hitung</button>
+<div class="tot"><div class="l">TOTAL ESTIMASI BIAYA</div><div class="v" id="tot">—</div></div>
+<div class="res">
+<div class="row"><span>Total porsi</span><b id="porsi">—</b></div>
+<div class="row"><span>Biaya per hari</span><b id="perday">—</b></div>
+<div class="row"><span>Biaya per minggu (5 hari)</span><b id="perweek">—</b></div>
+<div class="row"><span>Biaya per bulan (20 hari)</span><b id="permonth">—</b></div>
+</div>
+<h3>Kebutuhan Per Kategori (per hari)</h3>
+<div id="cats"></div>
+<h3>Skenario</h3>
+<div class="scen" id="scen"></div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var CATS=[{n:'🍚 Nasi',p:0.3},{n:'🍗 Lauk',p:0.4},{n:'🥬 Sayur',p:0.15},{n:'🍎 Buah',p:0.1},{n:'🥛 Minuman',p:0.05}];
+function fmt(n){return 'Rp '+Math.round(n).toLocaleString('id-ID')}
+document.getElementById('go').addEventListener('click',function(){
+  var n=parseFloat(document.getElementById('n').value)||0;
+  var d=parseFloat(document.getElementById('d').value)||0;
+  var c=parseFloat(document.getElementById('c').value)||0;
+  if(n<=0||d<=0||c<=0){alert('Isi semua field dengan nilai > 0');SFX.err();return}
+  document.getElementById('tot').textContent=fmt(n*d*c);
+  document.getElementById('porsi').textContent=(n*d).toLocaleString('id-ID')+' porsi';
+  document.getElementById('perday').textContent=fmt(n*c);
+  document.getElementById('perweek').textContent=fmt(n*c*5);
+  document.getElementById('permonth').textContent=fmt(n*c*20);
+  var cats=document.getElementById('cats');cats.innerHTML='';
+  var bp=n*c;
+  CATS.forEach(function(k){
+    var el=document.createElement('div');el.className='cat';
+    el.innerHTML='<span>'+k.n+'</span><b></b>';
+    el.querySelector('b').textContent=fmt(bp*k.p);
+    cats.appendChild(el);
+  });
+  var scen=document.getElementById('scen');scen.innerHTML='';
+  [{l:'HEMAT',c:c*0.7},{l:'STANDAR',c:c},{l:'PREMIUM',c:c*1.4},{l:'SEKOLAH BESAR',c:c*1.2}].forEach(function(s){
+    var el=document.createElement('div');
+    el.innerHTML='<div class="l">'+s.l+'</div><b></b>';
+    el.querySelector('b').textContent=fmt(n*d*s.c);
+    scen.appendChild(el);
+  });
+  SFX.win();
+});
+})();
+</script></body></html>

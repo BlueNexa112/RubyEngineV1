@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Age Calculator · ToolKit</title>
+<style>
+:root{--bg:#0a1220;--card:#152238;--fg:#e8f0ff;--mut:#7a8ab0;--acc:#4ea8ff;--acc2:#a78bfa;--line:rgba(78,168,255,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#1a2b48,#0a1220 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:12px;color:var(--mut);margin-bottom:6px}
+.f input{width:100%;padding:15px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:16px;font-weight:600;font-family:inherit;color-scheme:dark}
+.go{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a1220;font-size:15px;font-weight:800;border:none;font-family:inherit;box-shadow:0 8px 24px rgba(78,168,255,.3)}
+.rst{width:100%;padding:14px;margin-top:10px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--fg);font-size:14px;font-weight:600;font-family:inherit}
+.big{padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(78,168,255,.1),rgba(167,139,250,.05));border:1px solid var(--line);text-align:center;margin-bottom:12px}
+.big .v{font-size:26px;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;margin:8px 0;line-height:1.2}
+.big .l{font-size:11px;color:var(--mut);letter-spacing:1px}
+.row{display:flex;justify-content:space-between;padding:13px 16px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:8px;font-size:14px}
+.row span{color:var(--mut)}
+.row b{color:var(--acc2)}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Age Calculator</h1></div>
+<div class="f"><label>Tanggal lahir</label><input id="bd" type="date"></div>
+<button class="go" id="go">🧮 Hitung Usia</button>
+<button class="rst" id="rs">⟲ Reset</button>
+<div id="res" style="margin-top:14px;display:none">
+<div class="big"><div class="l">UMUR SAAT INI</div><div class="v" id="age">—</div></div>
+<div class="row"><span>Total hari sejak lahir</span><b id="tot">—</b></div>
+<div class="row"><span>Hari lahir</span><b id="dow">—</b></div>
+<div class="row"><span>Ulang tahun berikutnya</span><b id="nb">—</b></div>
+<div class="row"><span>Sisa hari</span><b id="left">—</b></div>
+</div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var BD=document.getElementById('bd'),RES=document.getElementById('res');
+document.getElementById('go').addEventListener('click',function(){
+  if(!BD.value){SFX.err();BD.focus();return}
+  var b=new Date(BD.value),now=new Date();
+  if(b>now){alert('Tanggal lahir tidak valid');SFX.err();return}
+  var y=now.getFullYear()-b.getFullYear();
+  var m=now.getMonth()-b.getMonth();
+  var d=now.getDate()-b.getDate();
+  if(d<0){m--;d+=new Date(now.getFullYear(),now.getMonth(),0).getDate()}
+  if(m<0){y--;m+=12}
+  var total=Math.floor((now-b)/86400000);
+  var days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var next=new Date(now.getFullYear(),b.getMonth(),b.getDate());
+  if(next<now)next.setFullYear(now.getFullYear()+1);
+  var left=Math.ceil((next-now)/86400000);
+  document.getElementById('age').textContent=y+' Tahun, '+m+' Bulan, '+d+' Hari';
+  document.getElementById('tot').textContent=total.toLocaleString('id-ID')+' hari';
+  document.getElementById('dow').textContent=days[b.getDay()];
+  document.getElementById('nb').textContent=next.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('left').textContent=left+' hari lagi';
+  RES.style.display='block';SFX.win();
+});
+document.getElementById('rs').addEventListener('click',function(){BD.value='';RES.style.display='none';SFX.tap()});
+})();
+</script></body></html>

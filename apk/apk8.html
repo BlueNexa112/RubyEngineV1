@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Asisten AI · ToolKit</title>
+<style>
+:root{--bg:#12041a;--card:#20082e;--fg:#fce7ff;--mut:#a173b8;--acc:#f472b6;--acc2:#22d3ee;--line:rgba(244,114,182,.22)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(140% 80% at 50% 0%,#2a0c3d,#12041a 65%);color:var(--fg);min-height:100dvh;padding:16px;padding-bottom:96px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.back{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--fg);text-decoration:none;font-size:20px}
+h1{font-size:17px;font-weight:700}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:84%;padding:12px 15px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;animation:up .25s ease both}
+@keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.bot{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+.me{align-self:flex-end;background:linear-gradient(135deg,var(--acc),#c026a3);color:#12041a;font-weight:600;border-bottom-right-radius:4px}
+.comp{position:fixed;bottom:0;left:0;right:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(18,4,26,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;gap:8px;max-width:600px;margin:0 auto}
+.comp input{flex:1;height:48px;padding:0 14px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:15px;font-family:inherit}
+.comp input:focus{outline:none;border-color:var(--acc)}
+.comp button{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#12041a;font-size:18px;border:none;font-weight:800}
+.comp button:active{transform:scale(.94)}
+</style></head><body>
+<div class="top"><a class="back" href="../apk.html">←</a><h1>Asisten AI</h1></div>
+<div class="chat" id="ch"></div>
+<div class="comp"><input id="in" placeholder="Tulis pesan…" autocomplete="off"><button id="sd">➤</button></div>
+<script src="../js/sfx.js"></script>
+<script>
+(function(){
+var ch=document.getElementById('ch'),inp=document.getElementById('in');
+function add(t,w){var d=document.createElement('div');d.className='msg '+w;d.textContent=t;ch.appendChild(d);window.scrollTo(0,document.body.scrollHeight);}
+function resp(q){
+  q=q.toLowerCase();
+  if(/^(halo|hai|hi|hello|hey)/.test(q)) return 'Halo! 👋 Ada yang bisa saya bantu?';
+  if(/nama.*(kamu|mu)|siapa kamu/.test(q)) return 'Saya ToolKit AI, asisten offline yang siap membantu.';
+  if(/jam|waktu/.test(q)) return 'Sekarang pukul '+new Date().toLocaleTimeString('id-ID')+'.';
+  if(/tanggal|hari ini/.test(q)) return 'Hari ini '+new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'.';
+  if(/terima kasih|makasih|thanks/.test(q)) return 'Sama-sama! 😊';
+  if(/bantuan|help|bisa apa/.test(q)) return 'Saya bisa menjawab sapaan, memberi waktu/tanggal, cerita ringan, dan hitung matematika sederhana.';
+  if(/apa kabar/.test(q)) return 'Saya baik! Bagaimana denganmu?';
+  if(/cerita|lelucon|joke/.test(q)) return 'Kenapa komputer tidak kedinginan? Karena punya Windows! 🪟😄';
+  if(/bye|selamat tinggal|sampai jumpa/.test(q)) return 'Sampai jumpa! 👋';
+  if(/cuaca/.test(q)) return 'Maaf, saya tidak punya akses cuaca real-time.';
+  if(/\d+\s*[\+\-\*\/]\s*\d+/.test(q)){
+    var m=q.replace(/[^0-9+\-*/().]/g,'');
+    try{var v=Function('return ('+m+')')();if(isFinite(v))return 'Hasilnya: '+v;}catch(e){}
+    return 'Coba tulis seperti: 12 + 5';
+  }
+  if(/\?$/.test(q)) return 'Pertanyaan menarik! Sayangnya saya belum bisa menjawab itu.';
+  return 'Baik, saya catat. Ada lagi?';
+}
+function send(){
+  var t=inp.value.trim();if(!t)return;
+  add(t,'me');inp.value='';SFX.pop();
+  setTimeout(function(){add(resp(t),'bot');SFX.tick();},320);
+}
+document.getElementById('sd').addEventListener('click',send);
+inp.addEventListener('keydown',function(e){if(e.key==='Enter')send()});
+add('Halo! Saya ToolKit AI. Tanyakan apa saja — waktu, tanggal, atau ajak ngobrol ringan. 😊','bot');
+})();
+</script></body></html>
